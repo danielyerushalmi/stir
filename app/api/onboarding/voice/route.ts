@@ -16,9 +16,9 @@ export async function POST(req: Request) {
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
 
   await db.voiceSample.upsert({
-    where: { id: `vs_${restaurant.id}_${reviewType}` },
+    where: { restaurantId_reviewType: { restaurantId: restaurant.id, reviewType } },
     update: { ownerResponse, sampleReview },
-    create: { id: `vs_${restaurant.id}_${reviewType}`, restaurantId: restaurant.id, reviewType, sampleReview, ownerResponse },
+    create: { restaurantId: restaurant.id, reviewType, sampleReview, ownerResponse },
   })
 
   return NextResponse.json({ ok: true })

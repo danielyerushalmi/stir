@@ -38,6 +38,8 @@ model VoiceSample {
   sampleReview  String     @db.Text
   ownerResponse String     @db.Text
   createdAt     DateTime   @default(now())
+
+  @@unique([restaurantId, reviewType])
 }
 
 model Platform {
