@@ -10,7 +10,7 @@ export async function getOrCreateDbUser() {
     update: {},
     create: {
       clerkId: clerkUser.id,
-      email: clerkUser.emailAddresses[0].emailAddress,
+      email: clerkUser.emailAddresses[0]?.emailAddress ?? clerkUser.primaryEmailAddress?.emailAddress ?? '',
     },
   })
 }
