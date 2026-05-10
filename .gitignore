@@ -34,3 +34,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local claude settings (machine-specific absolute paths)
+.claude/settings.local.json
+
+# ephemeral tool artifacts
+.superpowers/
