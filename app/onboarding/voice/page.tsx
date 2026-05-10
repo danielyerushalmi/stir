@@ -11,6 +11,7 @@ const SCENARIOS = [
   { type: 'food_complaint', label: 'Food quality complaint', review: 'The risotto was undercooked and bland. For the price I expected a lot more. Kitchen needs to get its act together.' },
   { type: 'price_complaint', label: 'Price/value complaint', review: 'Good food but very overpriced for a casual neighbourhood place. $28 for a pasta dish is frankly excessive.' },
   { type: 'mixed', label: 'Mixed review', review: 'Great atmosphere and genuinely friendly staff. The tiramisu was the best I have had. Main course was a bit salty though — kitchen inconsistency.' },
+  { type: 'service_complaint', label: 'Service complaint', review: 'Our server was dismissive and forgot our drinks twice. Food came out wrong and no apology was offered. Disappointing for a restaurant of this calibre.' },
 ]
 
 export default function VoicePage() {
@@ -20,7 +21,7 @@ export default function VoicePage() {
   const [saving, setSaving] = useState(false)
 
   const scenario = SCENARIOS[step]
-  const completed = Object.keys(responses).length
+  const completed = step  // count of steps already passed, not typed
 
   async function saveAndNext() {
     const text = responses[scenario.type]?.trim()
@@ -52,8 +53,8 @@ export default function VoicePage() {
           <p className="text-sm text-charcoal italic">&quot;{scenario.review}&quot;</p>
         </div>
         <div className="mb-5">
-          <label className="text-sm font-medium text-charcoal mb-1.5 block">Your response</label>
-          <textarea rows={4} placeholder="Write your response..." value={responses[scenario.type] || ''} onChange={e => setResponses(p => ({ ...p, [scenario.type]: e.target.value }))} className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-charcoal placeholder:text-text-lighter focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20" />
+          <label htmlFor="voice-response" className="text-sm font-medium text-charcoal mb-1.5 block">Your response</label>
+          <textarea id="voice-response" rows={4} placeholder="Write your response..." value={responses[scenario.type] || ''} onChange={e => setResponses(p => ({ ...p, [scenario.type]: e.target.value }))} className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-charcoal placeholder:text-text-lighter focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20" />
         </div>
         {step === SCENARIOS.length - 1 && completed === SCENARIOS.length && (
           <p className="mb-4 text-sm text-green font-medium">Your voice is set — Stir will write like you from now on.</p>

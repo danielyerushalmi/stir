@@ -64,7 +64,7 @@ export default function ConnectStep() {
         </div>
         {error && <p className="mb-4 text-sm text-red-dark">{error}</p>}
         <Button size="lg" className="w-full" onClick={handleContinue} disabled={loading}>Continue →</Button>
-        <button className="mt-3 w-full text-center text-sm text-text-lighter hover:text-orange" onClick={() => { connect('GOOGLE'); router.push('/onboarding/voice') }}>Skip for now</button>
+        <button className="mt-3 w-full text-center text-sm text-text-lighter hover:text-orange" onClick={async () => { await connect('GOOGLE'); router.push('/onboarding/voice') }}>Skip for now</button>
       </Card>
     </div>
   )
