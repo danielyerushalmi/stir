@@ -67,8 +67,12 @@ const STEPS = [
 ]
 
 function StepMockup({ activeStep, index }: { activeStep: MotionValue<number>; index: number }) {
-  const opacity = useTransform(activeStep, (v: number) => Math.round(v) === index ? 1 : 0)
-  const y = useTransform(activeStep, (v: number) => Math.round(v) === index ? 0 : 12)
+  const opacity = useTransform(activeStep, (v: number) =>
+    Math.max(0, 1 - Math.abs(v - index))
+  )
+  const y = useTransform(activeStep, (v: number) =>
+    (v - index) * 20
+  )
   return (
     <motion.div className="absolute inset-0 p-6" style={{ opacity, y }}>
       {STEPS[index].mockup}
@@ -77,9 +81,14 @@ function StepMockup({ activeStep, index }: { activeStep: MotionValue<number>; in
 }
 
 function StepCard({ step, index, activeStep }: { step: typeof STEPS[0]; index: number; activeStep: MotionValue<number> }) {
-  const opacity = useTransform(activeStep, (v: number) => Math.abs(Math.round(v) - index) === 0 ? 1 : 0.35)
+  const opacity = useTransform(activeStep, (v: number) =>
+    0.35 + Math.max(0, 1 - Math.abs(v - index)) * 0.65
+  )
+  const scale = useTransform(activeStep, (v: number) =>
+    0.97 + Math.max(0, 1 - Math.abs(v - index)) * 0.03
+  )
   return (
-    <motion.div className="flex gap-4" style={{ opacity }}>
+    <motion.div className="flex gap-4" style={{ opacity, scale }}>
       <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 bg-orange-light text-orange">
         {step.num}
       </div>

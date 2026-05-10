@@ -103,14 +103,14 @@ function ActivePainPoint({
   index: number
   activeStepRaw: MotionValue<number>
 }) {
-  const opacity = useTransform(activeStepRaw, (v: number) => {
-    const dist = Math.abs(Math.round(v) - index)
-    return dist === 0 ? 1 : 0
-  })
-  const y = useTransform(activeStepRaw, (v: number) => {
-    const dist = Math.abs(Math.round(v) - index)
-    return dist === 0 ? 0 : 16
-  })
+  // Smooth crossfade: opacity is 1 at exact index, fades to 0 over ±1 scroll unit
+  const opacity = useTransform(activeStepRaw, (v: number) =>
+    Math.max(0, 1 - Math.abs(v - index))
+  )
+  // Subtle y offset: active is at 0, items above/below drift ±20px
+  const y = useTransform(activeStepRaw, (v: number) =>
+    (v - index) * 20
+  )
 
   return (
     <motion.div className="absolute inset-0" style={{ opacity, y }}>
