@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String       @id @default(cuid())
+  clerkId     String       @unique
+  email       String       @unique
+  createdAt   DateTime     @default(now())
+  restaurants Restaurant[]
+}
+
+model Restaurant {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  cuisineType  String
+  city         String
+  vibe         String        @db.Text
+  createdAt    DateTime      @default(now())
+  platforms    Platform[]
+  reviews      Review[]
+  voiceSamples VoiceSample[]
+  insights     Insight[]
+  subscription Subscription?
+}
+
+model VoiceSample {
+  id            String     @id @default(cuid())
+  restaurantId  String
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  reviewType    String
+  sampleReview  String     @db.Text
+  ownerResponse String     @db.Text
+  createdAt     DateTime   @default(now())
+}
+
+model Platform {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name         String
+  externalId   String?
+  accessToken  String?
+  isConnected  Boolean    @default(false)
+  lastSyncedAt DateTime?
+  createdAt    DateTime   @default(now())
+
+  @@unique([restaurantId, name])
+}
+
+model Review {
+  id           String          @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  platform     String
+  externalId   String
+  rating       Int
+  reviewText   String          @db.Text
+  authorName   String
+  isDelivery   Boolean         @default(false)
+  reviewDate   DateTime
+  createdAt    DateTime        @default(now())
+  response     ReviewResponse?
+
+  @@unique([platform, externalId])
+}
+
+model ReviewResponse {
+  id        String   @id @default(cuid())
+  reviewId  String   @unique
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  draftText String   @db.Text
+  finalText String?  @db.Text
+  status    String   @default("DRAFT")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Insight {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  type         String
+  title        String
+  body         String     @db.Text
+  reviewCount  Int
+  platforms    String[]
+  isRead       Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+}
+
+model Subscription {
+  id                   String     @id @default(cuid())
+  restaurantId         String     @unique
+  restaurant           Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  plan                 String     @default("FREE")
+  status               String     @default("active")
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+}
