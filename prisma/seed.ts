@@ -52,6 +52,11 @@ async function main() {
       sampleReview: 'Good food but very overpriced for a casual place. $28 for a pasta dish is too much.',
       ownerResponse: "Fair point — our prices reflect sourcing everything locally and making pasta fresh daily, but I hear you on the value question. We do a weeknight prix-fixe that might hit better. Worth a look.",
     },
+    {
+      reviewType: 'service_complaint',
+      sampleReview: 'Our server was dismissive and forgot our drinks twice. Food came out wrong and no one apologised.',
+      ownerResponse: "That's not the experience we work for and I'm really sorry. Forgetting drinks, wrong dishes, no apology — that's three misses in one visit. I'd like to make it right. Drop me a line at hello@thecornertable.com.",
+    },
   ]
 
   for (const vs of voiceSamples) {
@@ -72,7 +77,7 @@ async function main() {
     })
   }
 
-  // Reviews — 45 across Google, Yelp, TripAdvisor + delivery platforms
+  // Reviews — 40 across Google, Yelp, TripAdvisor + delivery platforms
   const reviewData = [
     { platform: 'GOOGLE', externalId: 'g1', rating: 5, authorName: 'Sarah M.', isDelivery: false, reviewDate: new Date('2026-04-28'), reviewText: 'Best Italian in Austin. The carbonara is life-changing and the staff remembered my name on my second visit.' },
     { platform: 'GOOGLE', externalId: 'g2', rating: 4, authorName: 'James T.', isDelivery: false, reviewDate: new Date('2026-04-25'), reviewText: 'Solid food, great wine list. Can get a bit loud on weekends but the pasta makes up for it.' },
