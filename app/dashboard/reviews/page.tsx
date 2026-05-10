@@ -49,6 +49,7 @@ export default function ReviewsPage() {
       return
     }
     if (data.draft) setActiveDrafts(prev => ({ ...prev, [reviewId]: data.draft }))
+    else if (!data.error) alert('Could not generate draft. Please try again.')
   }
 
   async function approveDraft(reviewId: string, finalText: string) {
@@ -70,15 +71,19 @@ export default function ReviewsPage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-charcoal">Reviews</h1>
-        <Button size="sm" variant="secondary" onClick={() => fetch('/api/reviews/fetch', { method: 'POST' }).then(loadReviews)}>Sync reviews</Button>
+        <Button size="sm" variant="secondary" onClick={async () => {
+          const res = await fetch('/api/reviews/fetch', { method: 'POST' })
+          if (!res.ok) { const d = await res.json(); alert(d.error ?? 'Sync failed'); return }
+          loadReviews()
+        }}>Sync reviews</Button>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-6">
         {PLATFORMS.map(p => (
-          <button key={p} onClick={() => setFilter(f => ({ ...f, platform: p }))} className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${filter.platform === p ? 'bg-orange text-white border-orange' : 'bg-white border-border text-text-muted hover:border-orange hover:text-orange'}`}>{p || 'All platforms'}</button>
+          <button key={p} onClick={() => { setPage(1); setFilter(f => ({ ...f, platform: p })) }} className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${filter.platform === p ? 'bg-orange text-white border-orange' : 'bg-white border-border text-text-muted hover:border-orange hover:text-orange'}`}>{p || 'All platforms'}</button>
         ))}
         {RATINGS.map(r => (
-          <button key={r} onClick={() => setFilter(f => ({ ...f, rating: r }))} className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${filter.rating === r ? 'bg-orange text-white border-orange' : 'bg-white border-border text-text-muted hover:border-orange hover:text-orange'}`}>{r ? `${r}★` : 'All ratings'}</button>
+          <button key={r} onClick={() => { setPage(1); setFilter(f => ({ ...f, rating: r })) }} className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${filter.rating === r ? 'bg-orange text-white border-orange' : 'bg-white border-border text-text-muted hover:border-orange hover:text-orange'}`}>{r ? `${r}★` : 'All ratings'}</button>
         ))}
       </div>
 

@@ -6,7 +6,9 @@ export const redis = new Redis({
 })
 
 export async function checkRateLimit(key: string, maxCount: number, windowSeconds: number): Promise<boolean> {
-  const count = await redis.incr(key)
-  if (count === 1) await redis.expire(key, windowSeconds)
+  const pipeline = redis.pipeline()
+  pipeline.incr(key)
+  pipeline.expire(key, windowSeconds)
+  const [count] = await pipeline.exec() as [number, number]
   return count <= maxCount
 }
