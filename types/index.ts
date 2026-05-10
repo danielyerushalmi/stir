@@ -11,7 +11,7 @@ export type VoiceReviewType =
   | 'mixed'
 
 export interface ScoreResult {
-  overall: number
+  overall: number | null
   trend: { direction: 'up' | 'down' | 'flat'; delta: number }
   deliveryScore: number | null
 }
