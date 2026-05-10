@@ -18,13 +18,15 @@ export default async function DashboardPage() {
 
   const reviewCount = await db.review.count({ where: { restaurantId: restaurant.id } })
   const now = new Date()
+  const hour = now.getHours()
+  const timeGreeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
   const dayLabel = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 
   return (
     <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-charcoal">Good morning, {restaurant.name}</h1>
+          <h1 className="text-2xl font-semibold text-charcoal">{timeGreeting}, {restaurant.name}</h1>
           <p className="text-sm text-text-muted mt-1">{dayLabel}</p>
         </div>
         {reviewCount > 0 && (
