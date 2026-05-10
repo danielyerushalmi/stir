@@ -15,18 +15,19 @@ export async function POST(req: Request) {
   const restaurant = await db.restaurant.findFirst({ where: { userId: user.id }, include: { subscription: true } })
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
 
+  const { reviewId } = await req.json()
+  if (!reviewId) return NextResponse.json({ error: 'reviewId required' }, { status: 400 })
+
+  // Verify review belongs to this restaurant before consuming rate limit quota
+  const review = await db.review.findFirst({ where: { id: reviewId, restaurantId: restaurant.id } })
+  if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+
   const plan = restaurant.subscription?.plan ?? 'FREE'
   if (plan === 'FREE') {
     const month = new Date().toISOString().slice(0, 7)
     const allowed = await checkRateLimit(`drafts:${restaurant.id}:${month}`, 3, 31 * 24 * 3600)
     if (!allowed) return NextResponse.json({ error: 'UPGRADE_REQUIRED', message: 'Free plan: 3 AI drafts per month. Upgrade to continue.' }, { status: 402 })
   }
-
-  const { reviewId } = await req.json()
-
-  // Verify review belongs to this restaurant
-  const review = await db.review.findFirst({ where: { id: reviewId, restaurantId: restaurant.id } })
-  if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
 
   try {
     const draft = await generateDraft(reviewId)
