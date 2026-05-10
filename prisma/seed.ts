@@ -113,6 +113,7 @@ async function main() {
     { platform: 'GRUBHUB', externalId: 'gh1', rating: 1, authorName: 'User_5544', isDelivery: true, reviewDate: new Date('2026-04-20'), reviewText: 'Order was missing the salad and the pasta was ice cold. Never again.' },
     { platform: 'GRUBHUB', externalId: 'gh2', rating: 3, authorName: 'User_2278', isDelivery: true, reviewDate: new Date('2026-04-09'), reviewText: 'Average delivery experience. Food is clearly better in person.' },
     { platform: 'GRUBHUB', externalId: 'gh3', rating: 2, authorName: 'User_8831', isDelivery: true, reviewDate: new Date('2026-04-01'), reviewText: 'Sauce spilled everywhere in the bag. Packaging needs improvement badly.' },
+    { platform: 'TRIPADVISOR', externalId: 'ta6', rating: 3, authorName: 'Claire N.', isDelivery: false, reviewDate: new Date('2026-04-01'), reviewText: 'Enjoyable dinner overall. The pasta was good but service was inattentive toward the end of the evening.' },
   ]
 
   for (const r of reviewData) {
