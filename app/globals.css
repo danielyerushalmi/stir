@@ -5,7 +5,23 @@
 
 :root {
   --orange: #E8630A;
-  --charcoal: #1A1A2E;
-  --warm-gray: #F9F6F2;
+  --brown: #2C1810;
+  --cream: #FAF7F2;
 }
-body { background-color: #F9F6F2; font-family: 'Inter', sans-serif; }
+
+body {
+  background-color: #FAF7F2;
+  font-family: 'Inter', sans-serif;
+}
+
+.grain {
+  position: relative;
+}
+.grain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
