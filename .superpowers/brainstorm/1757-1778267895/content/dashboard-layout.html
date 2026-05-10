@@ -1,0 +1,229 @@
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, sans-serif; background: #f0ede9; }
+
+  .q { padding: 20px 24px 12px; }
+  .q h2 { font-size: 18px; font-weight: 600; color: #1A1A2E; margin-bottom: 4px; }
+  .q p { font-size: 13px; color: #5F5E5A; }
+
+  .layouts { display: flex; gap: 16px; padding: 0 24px 24px; }
+
+  .layout-card {
+    flex: 1;
+    background: white;
+    border: 2px solid #E8E0D8;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .layout-card:hover { border-color: #E8630A; box-shadow: 0 4px 16px rgba(232,99,10,0.12); }
+  .layout-card.selected { border-color: #E8630A; box-shadow: 0 4px 20px rgba(232,99,10,0.2); }
+
+  .card-label {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1A1A2E;
+    border-bottom: 1px solid #E8E0D8;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: #FEF0E7;
+    color: #E8630A;
+  }
+
+  /* MOCKUP STYLES */
+  .mock { display: flex; height: 280px; }
+
+  /* Sidebar */
+  .mock-sidebar {
+    width: 52px;
+    background: #1A1A2E;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .mock-sidebar-wide {
+    width: 130px;
+    background: #1A1A2E;
+    padding: 10px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .s-logo { width: 28px; height: 28px; border-radius: 6px; background: #E8630A; margin-bottom: 6px; }
+  .s-icon { width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.08); }
+  .s-icon.active { background: #E8630A; }
+  .s-row { display: flex; align-items: center; gap: 7px; padding: 6px 7px; border-radius: 6px; }
+  .s-row.active { background: rgba(232,99,10,0.25); }
+  .s-dot { width: 16px; height: 16px; border-radius: 4px; background: rgba(255,255,255,0.15); flex-shrink: 0; }
+  .s-dot.active { background: #E8630A; }
+  .s-text { width: 60px; height: 8px; border-radius: 3px; background: rgba(255,255,255,0.2); }
+  .s-text.bright { background: rgba(255,255,255,0.6); }
+  .s-logo-row { display: flex; align-items: center; gap: 7px; padding: 4px 7px 10px; margin-bottom: 4px; }
+  .s-logo-sm { width: 22px; height: 22px; border-radius: 5px; background: #E8630A; flex-shrink: 0; }
+  .s-brand { width: 40px; height: 9px; border-radius: 3px; background: rgba(255,255,255,0.7); }
+
+  /* Main content area */
+  .mock-main { flex: 1; background: #F9F6F2; padding: 10px; overflow: hidden; }
+
+  /* Top bar */
+  .mock-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .mock-greeting { width: 120px; height: 9px; background: #1A1A2E; border-radius: 3px; }
+  .mock-date { width: 70px; height: 7px; background: #C0BAB3; border-radius: 3px; }
+
+  /* Score cards row */
+  .mock-scores { display: flex; gap: 6px; margin-bottom: 8px; }
+  .mock-score-card {
+    flex: 1;
+    background: white;
+    border: 1px solid #E8E0D8;
+    border-radius: 8px;
+    padding: 7px 8px;
+  }
+  .sc-label { width: 50px; height: 6px; background: #C0BAB3; border-radius: 2px; margin-bottom: 5px; }
+  .sc-value { width: 35px; height: 14px; background: #1A1A2E; border-radius: 3px; margin-bottom: 3px; }
+  .sc-tag { width: 40px; height: 5px; background: #2D9B6F; border-radius: 2px; opacity: 0.6; }
+
+  /* Two column body */
+  .mock-body { display: flex; gap: 6px; }
+  .mock-reviews { flex: 2; display: flex; flex-direction: column; gap: 4px; }
+  .mock-insights { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+
+  .mock-section-hdr { width: 60px; height: 7px; background: #1A1A2E; border-radius: 2px; margin-bottom: 4px; }
+  .mock-review-item {
+    background: white;
+    border: 1px solid #E8E0D8;
+    border-radius: 6px;
+    padding: 6px 7px;
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .ri-dot { width: 10px; height: 10px; border-radius: 50%; background: #E8630A; flex-shrink: 0; margin-top: 1px; }
+  .ri-lines { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .ri-line { height: 5px; background: #E8E0D8; border-radius: 2px; }
+  .ri-line.short { width: 60%; }
+  .ri-btn { width: 40px; height: 14px; background: #E8630A; border-radius: 4px; flex-shrink: 0; }
+
+  .mock-insight-item {
+    background: white;
+    border: 1px solid #E8E0D8;
+    border-radius: 6px;
+    padding: 6px 7px;
+  }
+  .ins-dot { width: 24px; height: 5px; background: #FAEEDA; border-radius: 2px; margin-bottom: 4px; }
+  .ins-dot.red { background: #FCEBEB; }
+  .ins-line { height: 5px; background: #E8E0D8; border-radius: 2px; margin-bottom: 3px; }
+  .ins-line.short { width: 70%; }
+
+  .desc-block { padding: 10px 14px; border-top: 1px solid #E8E0D8; }
+  .desc-block p { font-size: 11.5px; color: #5F5E5A; line-height: 1.5; }
+  .desc-block strong { color: #1A1A2E; }
+</style>
+
+<div class="q">
+  <h2>Dashboard layout — which feels right?</h2>
+  <p>Both use the same charcoal sidebar and warm-gray background. The difference is sidebar width and content density.</p>
+</div>
+
+<div class="layouts">
+
+  <!-- Option A: Icon-only sidebar -->
+  <div class="layout-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-label">
+      A — Compact icon sidebar
+      <span class="badge">Minimal</span>
+    </div>
+    <div class="mock">
+      <div class="mock-sidebar">
+        <div class="s-logo"></div>
+        <div class="s-icon active"></div>
+        <div class="s-icon"></div>
+        <div class="s-icon"></div>
+        <div class="s-icon"></div>
+      </div>
+      <div class="mock-main">
+        <div class="mock-topbar">
+          <div class="mock-greeting"></div>
+          <div class="mock-date"></div>
+        </div>
+        <div class="mock-scores">
+          <div class="mock-score-card"><div class="sc-label"></div><div class="sc-value"></div><div class="sc-tag"></div></div>
+          <div class="mock-score-card"><div class="sc-label"></div><div class="sc-value"></div><div class="sc-tag"></div></div>
+          <div class="mock-score-card"><div class="sc-label"></div><div class="sc-value"></div><div class="sc-tag"></div></div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-reviews">
+            <div class="mock-section-hdr"></div>
+            <div class="mock-review-item"><div class="ri-dot"></div><div class="ri-lines"><div class="ri-line"></div><div class="ri-line short"></div></div><div class="ri-btn"></div></div>
+            <div class="mock-review-item"><div class="ri-dot"></div><div class="ri-lines"><div class="ri-line"></div><div class="ri-line short"></div></div><div class="ri-btn"></div></div>
+            <div class="mock-review-item"><div class="ri-dot"></div><div class="ri-lines"><div class="ri-line"></div><div class="ri-line short"></div></div><div class="ri-btn"></div></div>
+          </div>
+          <div class="mock-insights">
+            <div class="mock-section-hdr"></div>
+            <div class="mock-insight-item"><div class="ins-dot red"></div><div class="ins-line"></div><div class="ins-line short"></div></div>
+            <div class="mock-insight-item"><div class="ins-dot"></div><div class="ins-line"></div><div class="ins-line short"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="desc-block">
+      <p>Icon-only sidebar saves horizontal space. <strong>More room for content.</strong> Navigation labels appear as tooltips on hover. Works best on smaller screens and feels modern/focused.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Wide labeled sidebar -->
+  <div class="layout-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-label">
+      B — Labeled sidebar
+      <span class="badge">Scannable</span>
+    </div>
+    <div class="mock">
+      <div class="mock-sidebar-wide">
+        <div class="s-logo-row"><div class="s-logo-sm"></div><div class="s-brand"></div></div>
+        <div class="s-row active"><div class="s-dot active"></div><div class="s-text bright"></div></div>
+        <div class="s-row"><div class="s-dot"></div><div class="s-text"></div></div>
+        <div class="s-row"><div class="s-dot"></div><div class="s-text"></div></div>
+        <div class="s-row"><div class="s-dot"></div><div class="s-text"></div></div>
+      </div>
+      <div class="mock-main">
+        <div class="mock-topbar">
+          <div class="mock-greeting"></div>
+          <div class="mock-date"></div>
+        </div>
+        <div class="mock-scores">
+          <div class="mock-score-card"><div class="sc-label"></div><div class="sc-value"></div><div class="sc-tag"></div></div>
+          <div class="mock-score-card"><div class="sc-label"></div><div class="sc-value"></div><div class="sc-tag"></div></div>
+          <div class="mock-score-card"><div class="sc-label"></div><div class="sc-value"></div><div class="sc-tag"></div></div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-reviews">
+            <div class="mock-section-hdr"></div>
+            <div class="mock-review-item"><div class="ri-dot"></div><div class="ri-lines"><div class="ri-line"></div><div class="ri-line short"></div></div><div class="ri-btn"></div></div>
+            <div class="mock-review-item"><div class="ri-dot"></div><div class="ri-lines"><div class="ri-line"></div><div class="ri-line short"></div></div><div class="ri-btn"></div></div>
+            <div class="mock-review-item"><div class="ri-dot"></div><div class="ri-lines"><div class="ri-line"></div><div class="ri-line short"></div></div><div class="ri-btn"></div></div>
+          </div>
+          <div class="mock-insights">
+            <div class="mock-section-hdr"></div>
+            <div class="mock-insight-item"><div class="ins-dot red"></div><div class="ins-line"></div><div class="ins-line short"></div></div>
+            <div class="mock-insight-item"><div class="ins-dot"></div><div class="ins-line"></div><div class="ins-line short"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="desc-block">
+      <p>Labeled sidebar shows nav names always visible. <strong>Easier to orient new users.</strong> Slightly less content width. Works great for SaaS tools owners use daily. Classic and clear.</p>
+    </div>
+  </div>
+
+</div>
