@@ -53,9 +53,9 @@ export default async function DashboardPage() {
       )}
 
       <div className="grid grid-cols-3 gap-4 mb-8">
-        <ScoreCard label="Overall Score" score={scores.overall || null} trend={scores.trend} subtitle="Dine-in platforms only" />
+        <ScoreCard label="Overall Score" score={scores.overall} trend={scores.trend} subtitle="Dine-in platforms only" />
         <ScoreCard label="Delivery Score" score={scores.deliveryScore} subtitle="Delivery orders only" />
-        <ScoreCard label="Awaiting Reply" score={awaitingReply} subtitle={awaitingReply === 1 ? '1 unanswered review' : `${awaitingReply} unanswered reviews`} />
+        <ScoreCard label="Awaiting Reply" score={awaitingReply} integer subtitle={awaitingReply === 1 ? '1 unanswered review' : `${awaitingReply} unanswered reviews`} />
       </div>
 
       <div className="grid grid-cols-3 gap-6">

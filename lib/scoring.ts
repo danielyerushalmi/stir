@@ -58,7 +58,7 @@ export async function getScoreResult(restaurantId: string): Promise<ScoreResult>
   const { db } = await import('./db')
   const reviews = await db.review.findMany({ where: { restaurantId } })
   return {
-    overall: calculateOverallScore(reviews) ?? 0,
+    overall: calculateOverallScore(reviews),
     trend: calculateTrend(reviews),
     deliveryScore: calculateDeliveryScore(reviews),
   }
