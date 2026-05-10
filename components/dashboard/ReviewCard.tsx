@@ -1,16 +1,27 @@
 'use client'
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 
-const PLATFORM_COLORS: Record<string, string> = {
-  GOOGLE: 'text-blue-600',
-  YELP: 'text-red-500',
-  TRIPADVISOR: 'text-green',
-  DOORDASH: 'text-red-600',
-  UBEREATS: 'text-green',
-  GRUBHUB: 'text-orange',
+const PLATFORM_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  GOOGLE: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'Google' },
+  YELP: { bg: 'bg-red-50', text: 'text-red-600', label: 'Yelp' },
+  TRIPADVISOR: { bg: 'bg-green-light', text: 'text-green', label: 'TripAdvisor' },
+  DOORDASH: { bg: 'bg-red-50', text: 'text-red-600', label: 'DoorDash' },
+  UBEREATS: { bg: 'bg-green-light', text: 'text-green', label: 'Uber Eats' },
+  GRUBHUB: { bg: 'bg-orange-light', text: 'text-orange', label: 'Grubhub' },
+}
+
+function StarRating({ rating }: { rating: number }) {
+  return (
+    <span className="text-sm">
+      {Array.from({ length: 5 }, (_, i) => (
+        <span key={i} className={i < rating ? 'text-orange' : 'text-border'}>★</span>
+      ))}
+    </span>
+  )
 }
 
 interface ReviewCardProps {
@@ -29,31 +40,48 @@ interface ReviewCardProps {
 
 export function ReviewCard({ review, onDraftRequest }: ReviewCardProps) {
   const [expanded, setExpanded] = useState(false)
-  const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating)
+  const platform = PLATFORM_STYLES[review.platform] ?? { bg: 'bg-border', text: 'text-text-muted', label: review.platform }
 
   return (
-    <div className="border border-border rounded-xl bg-white p-4">
+    <motion.div
+      className="border border-border rounded-xl bg-white p-4 shadow-sm"
+      whileHover={{ y: -1 }}
+      transition={{ duration: 0.15 }}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className={cn('text-xs font-medium uppercase tracking-wide', PLATFORM_COLORS[review.platform] || 'text-text-muted')}>{review.platform}</span>
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', platform.bg, platform.text)}>
+              {platform.label}
+            </span>
             {review.isDelivery && <Badge variant="gray">Delivery</Badge>}
-            <span className={cn('text-sm', review.rating >= 4 ? 'text-green' : review.rating <= 2 ? 'text-red-dark' : 'text-amber-dark')}>{stars}</span>
+            <StarRating rating={review.rating} />
           </div>
-          <p className="text-sm font-medium text-charcoal">{review.authorName}</p>
-          <p className="text-xs text-text-lighter mt-0.5">{new Date(review.reviewDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+          <p className="text-sm font-medium text-brown">{review.authorName}</p>
+          <p className="text-xs text-text-lighter mt-0.5">
+            {new Date(review.reviewDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </p>
           <p className={cn('mt-2 text-sm text-text-muted', !expanded && 'line-clamp-2')}>{review.reviewText}</p>
           {review.reviewText.length > 120 && (
-            <button className="text-xs text-orange mt-1" onClick={() => setExpanded(e => !e)}>{expanded ? 'Show less' : 'Read more'}</button>
+            <button className="text-xs text-orange mt-1 hover:text-orange-dark" onClick={() => setExpanded(e => !e)}>
+              {expanded ? 'Show less' : 'Read more'}
+            </button>
           )}
         </div>
         <div className="shrink-0">
-          {review.response
-            ? <Badge variant={review.response.status === 'POSTED' ? 'green' : 'orange'}>{review.response.status === 'POSTED' ? 'Replied' : 'Draft ready'}</Badge>
-            : <Button size="sm" onClick={() => onDraftRequest(review.id)}>Draft reply →</Button>
-          }
+          {review.response ? (
+            <Badge variant={review.response.status === 'POSTED' ? 'green' : 'orange'}>
+              {review.response.status === 'POSTED' ? 'Replied' : 'Draft ready'}
+            </Badge>
+          ) : (
+            <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.15 }}>
+              <Button size="sm" onClick={() => onDraftRequest(review.id)}>
+                Draft reply →
+              </Button>
+            </motion.div>
+          )}
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
