@@ -76,7 +76,13 @@ export async function generateInsights(restaurantId: string): Promise<void> {
   })
 
   const raw = (message.content[0] as { type: 'text'; text: string }).text.trim()
-  const insights = JSON.parse(raw) as { type: string; title: string; body: string; reviewCount: number; platforms: string[] }[]
+    .replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/, '')
+  let insights: { type: string; title: string; body: string; reviewCount: number; platforms: string[] }[]
+  try {
+    insights = JSON.parse(raw)
+  } catch {
+    throw new Error('AI returned malformed JSON for insights')
+  }
 
   await db.insight.deleteMany({ where: { restaurantId } })
   await db.insight.createMany({ data: insights.map(i => ({ restaurantId, ...i })) })
