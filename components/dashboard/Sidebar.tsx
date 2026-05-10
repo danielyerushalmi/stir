@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { StirLogo } from '@/components/logo/StirLogo'
 
 const NAV = [
   { href: '/dashboard', icon: '◻', label: 'Dashboard' },
@@ -31,7 +32,7 @@ export function Sidebar() {
   return (
     <aside className={cn('flex flex-col bg-charcoal text-white transition-all duration-200 min-h-screen', collapsed ? 'w-16' : 'w-56')}>
       <div className="flex items-center justify-between px-4 py-5">
-        {!collapsed && <span className="font-semibold text-lg tracking-tight">stir</span>}
+        {!collapsed && <StirLogo variant="white" size="sm" />}
         <button onClick={toggleCollapsed} className="ml-auto rounded p-1 hover:bg-white/10 text-white/60 hover:text-white transition-colors">
           {collapsed ? '›' : '‹'}
         </button>
