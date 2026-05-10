@@ -9,26 +9,10 @@ const STEPS = [
 ]
 
 const PRICING = [
-  {
-    name: 'Free', price: '$0', period: '', highlight: false,
-    features: ['3 AI-drafted responses/month', '1 platform connected', 'Basic reputation score', 'Response approval workflow'],
-    cta: 'Start free',
-  },
-  {
-    name: 'Starter', price: '$29', period: '/mo', highlight: true,
-    features: ['50 AI-drafted responses/month', '3 platforms connected', 'Full insights dashboard', 'Response posting', 'Voice training'],
-    cta: 'Start free trial',
-  },
-  {
-    name: 'Growth', price: '$79', period: '/mo', highlight: false,
-    features: ['Unlimited AI responses', 'All platforms', 'Competitor tracking', 'Weekly email reports', 'Priority support'],
-    cta: 'Start free trial',
-  },
-  {
-    name: 'Agency', price: '$199', period: '/mo', highlight: false,
-    features: ['Unlimited locations', 'White-label reports', 'Dedicated account manager', 'API access', 'Custom integrations'],
-    cta: 'Contact sales',
-  },
+  { name: 'Free', price: '$0', period: '', highlight: false, href: '/sign-up', cta: 'Start free', features: ['3 AI-drafted responses/month', '1 platform connected', 'Basic reputation score', 'Response approval workflow'] },
+  { name: 'Starter', price: '$29', period: '/mo', highlight: true, href: '/sign-up', cta: 'Start free trial', features: ['50 AI-drafted responses/month', '3 platforms connected', 'Full insights dashboard', 'Response posting', 'Voice training'] },
+  { name: 'Growth', price: '$79', period: '/mo', highlight: false, href: '/sign-up', cta: 'Start free trial', features: ['Unlimited AI responses', 'All platforms', 'Competitor tracking', 'Weekly email reports', 'Priority support'] },
+  { name: 'Agency', price: '$199', period: '/mo', highlight: false, href: 'mailto:hello@stirapp.io', cta: 'Contact sales', features: ['Unlimited locations', 'White-label reports', 'Dedicated account manager', 'API access', 'Custom integrations'] },
 ]
 
 const TESTIMONIALS = [
@@ -41,7 +25,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white font-sans">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 border-b border-border bg-white/95 backdrop-blur-sm">
+      <nav aria-label="Main" className="sticky top-0 z-50 border-b border-border bg-white/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <span className="text-xl font-semibold text-charcoal tracking-tight">stir</span>
           <div className="hidden md:flex items-center gap-8 text-sm text-text-muted">
@@ -176,9 +160,9 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/sign-up" className={`rounded-lg px-4 py-2.5 text-sm font-medium text-center transition-colors ${plan.highlight ? 'bg-orange text-white hover:bg-orange-dark' : 'border border-border text-charcoal hover:bg-warm-gray'}`}>
+                <a href={plan.href} className={`rounded-lg px-4 py-2.5 text-sm font-medium text-center transition-colors ${plan.highlight ? 'bg-orange text-white hover:bg-orange-dark' : 'border border-border text-charcoal hover:bg-warm-gray'}`}>
                   {plan.cta}
-                </Link>
+                </a>
               </div>
             ))}
           </div>
@@ -224,8 +208,8 @@ export default function LandingPage() {
           <span className="font-semibold text-charcoal">stir</span>
           <span>© 2026 Stir. All rights reserved.</span>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-charcoal">Privacy</a>
-            <a href="#" className="hover:text-charcoal">Terms</a>
+            <a href="/privacy" className="hover:text-charcoal">Privacy</a>
+            <a href="/terms" className="hover:text-charcoal">Terms</a>
           </div>
         </div>
       </footer>
