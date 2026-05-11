@@ -1,8 +1,110 @@
+'use client'
+import { useEffect, useState, useCallback } from 'react'
+import { useUser } from '@clerk/nextjs'
+import { Toast } from '@/components/ui/Toast'
+import { RestaurantTab } from './_components/RestaurantTab'
+import { PlatformsTab } from './_components/PlatformsTab'
+import { VoiceTab } from './_components/VoiceTab'
+import { AccountTab } from './_components/AccountTab'
+import { cn } from '@/lib/utils'
+
+type Tab = 'restaurant' | 'platforms' | 'voice' | 'account'
+
+interface SettingsData {
+  restaurant: { id: string; name: string; cuisineType: string; city: string; vibe: string }
+  platforms: { name: string; isConnected: boolean; lastSyncedAt: string | null }[]
+  voiceSamples: { id: string; reviewType: string; sampleReview: string; ownerResponse: string }[]
+  subscription: { plan: string } | null
+}
+
+interface ToastState {
+  message: string
+  type: 'success' | 'error'
+}
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'restaurant', label: 'Restaurant' },
+  { id: 'platforms',  label: 'Platforms' },
+  { id: 'voice',      label: 'Voice & Tone' },
+  { id: 'account',    label: 'Account' },
+]
+
 export default function SettingsPage() {
+  const { user } = useUser()
+  const [activeTab, setActiveTab] = useState<Tab>('restaurant')
+  const [data, setData] = useState<SettingsData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState<ToastState | null>(null)
+
+  const showToast = useCallback((message: string, type: 'success' | 'error') => {
+    setToast({ message, type })
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(d => setData(d))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const memberSince = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : '—'
+
   return (
-    <div className="p-8">
+    <div className="p-8 max-w-2xl">
       <h1 className="text-2xl font-semibold text-charcoal mb-6">Settings</h1>
-      <p className="text-text-muted">Settings will be available in a future update.</p>
+
+      <div className="flex gap-2 mb-6">
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              'rounded-full border px-4 py-1.5 text-sm font-medium transition-colors',
+              activeTab === tab.id
+                ? 'border-orange bg-orange-light text-orange'
+                : 'border-border bg-white text-text-lighter hover:border-orange hover:text-orange'
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-text-lighter">Loading…</p>
+      ) : !data ? (
+        <p className="text-sm text-red-dark">Failed to load settings. Please refresh.</p>
+      ) : (
+        <>
+          {activeTab === 'restaurant' && (
+            <RestaurantTab restaurant={data.restaurant} onToast={showToast} />
+          )}
+          {activeTab === 'platforms' && (
+            <PlatformsTab platforms={data.platforms} onToast={showToast} />
+          )}
+          {activeTab === 'voice' && (
+            <VoiceTab voiceSamples={data.voiceSamples} onToast={showToast} />
+          )}
+          {activeTab === 'account' && (
+            <AccountTab
+              email={user?.primaryEmailAddress?.emailAddress ?? '—'}
+              plan={data.subscription?.plan ?? 'FREE'}
+              memberSince={memberSince}
+              onToast={showToast}
+            />
+          )}
+        </>
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onDismiss={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }
