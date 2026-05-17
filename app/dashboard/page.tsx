@@ -6,7 +6,11 @@ import { getOrCreateDbUser } from '@/lib/user'
 import { getScoreResult } from '@/lib/scoring'
 import { ScoreCard } from '@/components/dashboard/ScoreCard'
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { upgrade?: string }
+}) {
   const { userId } = auth()
   if (!userId) redirect('/sign-in')
 
@@ -49,6 +53,15 @@ export default async function DashboardPage() {
             <p className="text-xs text-amber-dark/80 mt-0.5">Train Stir to write responses in your voice.</p>
           </div>
           <Link href="/onboarding/voice" className="text-sm font-medium text-orange hover:text-orange-dark">Set up now →</Link>
+        </div>
+      )}
+
+      {searchParams.upgrade && (
+        <div className="mb-6 flex items-center justify-between rounded-xl border border-orange/40 bg-orange-light px-5 py-4">
+          <div>
+            <p className="font-medium text-orange text-sm">Upgrade to {searchParams.upgrade}</p>
+            <p className="text-xs text-orange/80 mt-0.5">Paid plans are coming soon. You&apos;ll be notified when they launch.</p>
+          </div>
         </div>
       )}
 
