@@ -16,14 +16,34 @@ interface VoiceTabProps {
   onToast: (message: string, type: 'success' | 'error') => void
 }
 
-const TYPE_OPTIONS = ['positive', 'negative', 'neutral']
-const TYPE_VARIANT: Record<string, 'green' | 'red' | 'amber'> = {
-  positive: 'green',
-  negative: 'red',
-  neutral: 'amber',
+const TYPE_OPTIONS = [
+  'positive_5star',
+  'wait_complaint',
+  'food_complaint',
+  'price_complaint',
+  'service_complaint',
+  'mixed',
+]
+
+const TYPE_LABELS: Record<string, string> = {
+  positive_5star: 'Positive (5★)',
+  wait_complaint: 'Wait complaint',
+  food_complaint: 'Food complaint',
+  price_complaint: 'Price complaint',
+  service_complaint: 'Service complaint',
+  mixed: 'Mixed',
 }
 
-const EMPTY_FORM = { reviewType: 'positive', sampleReview: '', ownerResponse: '' }
+const TYPE_VARIANT: Record<string, 'green' | 'red' | 'amber' | 'gray'> = {
+  positive_5star: 'green',
+  wait_complaint: 'red',
+  food_complaint: 'red',
+  price_complaint: 'amber',
+  service_complaint: 'red',
+  mixed: 'gray',
+}
+
+const EMPTY_FORM = { reviewType: 'positive_5star', sampleReview: '', ownerResponse: '' }
 
 const textareaClass = 'w-full rounded-lg border border-border bg-cream px-3 py-2 text-sm text-charcoal placeholder:text-text-lighter focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20 resize-y min-h-[72px]'
 const labelClass = 'block text-xs font-medium uppercase tracking-wide text-text-lighter mb-1'
@@ -121,7 +141,7 @@ export function VoiceTab({ voiceSamples: initial, onToast }: VoiceTabProps) {
                     value={editForm.reviewType}
                     onChange={e => setEditForm(f => ({ ...f, reviewType: e.target.value }))}
                   >
-                    {TYPE_OPTIONS.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                    {TYPE_OPTIONS.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
                   </select>
                 </div>
                 <div className="mb-3">
@@ -156,7 +176,7 @@ export function VoiceTab({ voiceSamples: initial, onToast }: VoiceTabProps) {
               <div>
                 <div className="mb-2 flex items-center gap-2">
                   <Badge variant={TYPE_VARIANT[s.reviewType] ?? 'gray'}>
-                    {s.reviewType.charAt(0).toUpperCase() + s.reviewType.slice(1)}
+                    {TYPE_LABELS[s.reviewType] ?? s.reviewType}
                   </Badge>
                 </div>
                 <p className="text-xs font-medium uppercase tracking-wide text-text-lighter mb-0.5">Customer review</p>
@@ -189,7 +209,7 @@ export function VoiceTab({ voiceSamples: initial, onToast }: VoiceTabProps) {
                 value={addForm.reviewType}
                 onChange={e => setAddForm(f => ({ ...f, reviewType: e.target.value }))}
               >
-                {TYPE_OPTIONS.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                {TYPE_OPTIONS.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
               </select>
             </div>
             <div className="mb-3">
