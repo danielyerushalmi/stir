@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
@@ -24,25 +24,44 @@ const PLATFORM_META: Record<string, { label: string; emoji: string; bg: string }
 
 const ALL_PLATFORMS = ['GOOGLE', 'YELP', 'TRIPADVISOR', 'FACEBOOK']
 
+const ERROR_MESSAGES: Record<string, string> = {
+  google_denied: 'Google connection was cancelled.',
+  google_no_location: 'No Google Business location found on that account.',
+  google_failed: 'Google connection failed. Please try again.',
+}
+
 function formatSync(ts: string | null): string {
   if (!ts) return 'Never synced'
   const diff = Date.now() - new Date(ts).getTime()
   const h = Math.floor(diff / 3600000)
   if (h < 1) return 'Synced recently'
   if (h < 24) return `Synced ${h}h ago`
-  const d = Math.floor(h / 24)
-  return `Synced ${d}d ago`
+  return `Synced ${Math.floor(h / 24)}d ago`
 }
 
 export function PlatformsTab({ platforms: initial, onToast }: PlatformsTabProps) {
   const [platforms, setPlatforms] = useState(initial)
   const [busy, setBusy] = useState<string | null>(null)
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const errorParam = params.get('error')
+    if (errorParam && ERROR_MESSAGES[errorParam]) {
+      onToast(ERROR_MESSAGES[errorParam], 'error')
+    }
+  }, [onToast])
+
   function getState(name: string): PlatformData {
     return platforms.find(p => p.name === name) ?? { name, isConnected: false, lastSyncedAt: null }
   }
 
   async function toggle(name: string, isConnected: boolean) {
+    if (name === 'GOOGLE' && !isConnected) {
+      const returnTo = encodeURIComponent('/dashboard/settings?tab=platforms')
+      window.location.href = `/api/auth/google?returnTo=${returnTo}`
+      return
+    }
+
     setBusy(name)
     try {
       if (isConnected) {
@@ -92,7 +111,7 @@ export function PlatformsTab({ platforms: initial, onToast }: PlatformsTabProps)
               <div className="flex items-center gap-2.5 flex-shrink-0">
                 <span className={cn(
                   'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
-                  p.isConnected ? 'bg-green-light text-green' : 'bg-border text-text-lighter'
+                  p.isConnected ? 'bg-green-light text-green' : 'bg-border text-text-lighter',
                 )}>
                   <span className={cn('h-1.5 w-1.5 rounded-full', p.isConnected ? 'bg-green' : 'bg-text-lighter')} />
                   {p.isConnected ? 'Connected' : 'Disconnected'}
