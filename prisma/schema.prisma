@@ -47,6 +47,8 @@ model Platform {
   name         String
   externalId   String?
   accessToken  String?
+  refreshToken String?
+  tokenExpiresAt DateTime?
   isConnected  Boolean    @default(false)
   lastSyncedAt DateTime?
   createdAt    DateTime   @default(now())
