@@ -36,6 +36,11 @@ export function getGoogleOAuthUrl(state: string): string {
   })
 }
 
+/**
+ * Exchanges an authorization code for tokens.
+ * Note: refresh_token is only present on first consent.
+ * Always pass prompt='consent' in the OAuth URL to guarantee it is returned.
+ */
 export async function exchangeCodeForTokens(code: string) {
   const client = createBaseClient()
   const { tokens } = await client.getToken(code)
@@ -64,10 +69,10 @@ export async function getOAuthClient(platform: Platform): Promise<OAuth2Client> 
     expiry_date: platform.tokenExpiresAt?.getTime() ?? undefined,
   })
 
-  const expiresAt = platform.tokenExpiresAt?.getTime() ?? 0
+  const expiresAt = platform.tokenExpiresAt?.getTime()
   const fiveMinutes = 5 * 60 * 1000
 
-  if (Date.now() >= expiresAt - fiveMinutes) {
+  if (expiresAt !== undefined && Date.now() >= expiresAt - fiveMinutes) {
     try {
       const { credentials } = await client.refreshAccessToken()
       await db.platform.update({
@@ -105,8 +110,10 @@ export async function fetchGoogleLocationNames(client: OAuth2Client): Promise<st
       for (const loc of locsRes.data.locations ?? []) {
         if (loc.name) locationNames.push(loc.name)
       }
-    } catch {
-      // Skip accounts with no location access
+    } catch (err: unknown) {
+      const status = (err as any)?.response?.status
+      if (status !== 403) throw err
+      // 403 = this account has no accessible locations — skip
     }
   }
   return locationNames
