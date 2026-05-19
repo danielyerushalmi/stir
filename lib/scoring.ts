@@ -56,7 +56,10 @@ export function calculateTrend(reviews: ReviewForScore[]): { direction: 'up' | '
 
 export async function getScoreResult(restaurantId: string): Promise<ScoreResult> {
   const { db } = await import('@/lib/db')
-  const reviews = await db.review.findMany({ where: { restaurantId } })
+  const reviews = await db.review.findMany({
+    where: { restaurantId },
+    select: { platform: true, rating: true, isDelivery: true, reviewDate: true },
+  })
   return {
     overall: calculateOverallScore(reviews),
     trend: calculateTrend(reviews),

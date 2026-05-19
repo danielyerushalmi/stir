@@ -17,6 +17,9 @@ export async function PUT(
   const { reviewType, sampleReview, ownerResponse } = await req.json()
   if (!reviewType || !sampleReview || !ownerResponse)
     return NextResponse.json({ error: 'All fields required' }, { status: 400 })
+  const VALID_REVIEW_TYPES = ['positive_5star', 'wait_complaint', 'price_complaint', 'food_complaint', 'service_complaint', 'mixed']
+  if (!VALID_REVIEW_TYPES.includes(reviewType))
+    return NextResponse.json({ error: 'Invalid reviewType' }, { status: 400 })
 
   const restaurant = await db.restaurant.findFirst({ where: { userId: user.id } })
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })

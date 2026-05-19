@@ -11,8 +11,14 @@ export async function DELETE() {
   const user = await getOrCreateDbUser()
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
+  try {
+    await (await clerkClient()).users.deleteUser(userId)
+  } catch (err) {
+    console.error('Clerk user deletion failed:', err)
+    return NextResponse.json({ error: 'Failed to delete account. Please try again.' }, { status: 500 })
+  }
+
   await db.user.delete({ where: { id: user.id } })
-  await (await clerkClient()).users.deleteUser(userId)
 
   return NextResponse.json({ ok: true })
 }
