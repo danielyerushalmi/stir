@@ -51,7 +51,9 @@ export async function GET(req: Request) {
     const locationNames = await fetchGoogleLocationNames(client)
 
     if (locationNames.length === 0) {
-      const safeReturn = parsedState.returnTo.startsWith('/') ? parsedState.returnTo : '/dashboard'
+      const safeReturn = parsedState.returnTo.startsWith('/') && !parsedState.returnTo.startsWith('//')
+        ? parsedState.returnTo
+        : '/dashboard'
       const noLocUrl = new URL(safeReturn, req.url)
       noLocUrl.searchParams.set('error', 'google_no_location')
       return NextResponse.redirect(noLocUrl)
@@ -80,7 +82,9 @@ export async function GET(req: Request) {
       },
     })
 
-    const safeReturn = parsedState.returnTo.startsWith('/') ? parsedState.returnTo : '/dashboard'
+    const safeReturn = parsedState.returnTo.startsWith('/') && !parsedState.returnTo.startsWith('//')
+      ? parsedState.returnTo
+      : '/dashboard'
     return NextResponse.redirect(new URL(safeReturn, req.url))
   } catch (err) {
     console.error('Google OAuth callback error:', err)

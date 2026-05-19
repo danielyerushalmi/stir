@@ -94,7 +94,7 @@ export default function ReviewsPage() {
     loadReviews()
   }
 
-  const PLATFORMS = ['', 'GOOGLE', 'YELP', 'TRIPADVISOR']
+  const PLATFORMS = ['', 'GOOGLE', 'YELP', 'TRIPADVISOR', 'DOORDASH', 'UBEREATS', 'GRUBHUB']
   const RATINGS = ['', '1', '2', '3', '4', '5']
 
   return (

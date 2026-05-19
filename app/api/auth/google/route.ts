@@ -11,7 +11,10 @@ export async function GET(req: Request) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const url = new URL(req.url)
-  const returnTo = url.searchParams.get('returnTo') ?? '/dashboard/settings?tab=platforms'
+  const raw = url.searchParams.get('returnTo') ?? ''
+  const returnTo = raw.startsWith('/') && !raw.startsWith('//')
+    ? raw
+    : '/dashboard/settings?tab=platforms'
 
   const nonce = crypto.randomBytes(16).toString('hex')
   const state = Buffer.from(JSON.stringify({ nonce, returnTo })).toString('base64url')

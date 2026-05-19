@@ -19,7 +19,7 @@ export async function DELETE(
 
   await db.platform.updateMany({
     where: { restaurantId: restaurant.id, name: params.name },
-    data: { isConnected: false },
+    data: { isConnected: false, accessToken: null, refreshToken: null, tokenExpiresAt: null },
   })
 
   return NextResponse.json({ ok: true })

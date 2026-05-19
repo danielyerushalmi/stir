@@ -15,6 +15,8 @@ export async function POST(req: Request) {
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
 
   const { reviewId, finalText, action, postToGoogle } = await req.json()
+  if (action === 'approve' && typeof finalText === 'string' && finalText.length > 2000)
+    return NextResponse.json({ error: 'Response text too long (max 2000 characters)' }, { status: 400 })
 
   const review = await db.review.findFirst({
     where: { id: reviewId, restaurantId: restaurant.id },
@@ -50,7 +52,8 @@ export async function POST(req: Request) {
           if (err instanceof GoogleDisconnectedError) {
             return NextResponse.json({ ok: true, posted: false, warning: 'Saved locally — reconnect Google to post.' })
           }
-          const warning = (err as any)?.response?.data?.error?.message?.includes('already')
+          const gErr = err as { response?: { data?: { error?: { message?: string } } } }
+          const warning = gErr?.response?.data?.error?.message?.includes('already')
             ? 'This review already has a reply on Google.'
             : 'Saved locally — failed to post to Google. Please try again.'
           return NextResponse.json({ ok: true, posted: false, warning })
