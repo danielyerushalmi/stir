@@ -17,6 +17,9 @@ export async function DELETE(
   const restaurant = await db.restaurant.findFirst({ where: { userId: user.id } })
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
 
+  const VALID_PLATFORMS = ['GOOGLE', 'YELP', 'TRIPADVISOR', 'FACEBOOK', 'DOORDASH', 'UBEREATS', 'GRUBHUB']
+  if (!VALID_PLATFORMS.includes(params.name)) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
+
   await db.platform.updateMany({
     where: { restaurantId: restaurant.id, name: params.name },
     data: { isConnected: false, accessToken: null, refreshToken: null, tokenExpiresAt: null },

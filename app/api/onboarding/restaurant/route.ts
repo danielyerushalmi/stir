@@ -16,6 +16,8 @@ export async function POST(req: Request) {
   if (!name || !cuisineType || !city || !vibe) {
     return NextResponse.json({ error: 'All fields required' }, { status: 400 })
   }
+  if (name.length > 100 || cuisineType.length > 100 || city.length > 100 || vibe.length > 500)
+    return NextResponse.json({ error: 'One or more fields exceed maximum length' }, { status: 400 })
 
   const existing = await db.restaurant.findFirst({ where: { userId: user.id } })
   const restaurant = existing

@@ -38,10 +38,11 @@ export async function POST(req: Request) {
     })
     return NextResponse.json({ draft })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const message = err instanceof Error ? err.message : ''
     if (message === 'NO_VOICE_SAMPLES') {
       return NextResponse.json({ error: 'NO_VOICE_SAMPLES', message: 'Complete voice setup before generating drafts.' }, { status: 422 })
     }
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('Draft generation error:', err)
+    return NextResponse.json({ error: 'Failed to generate draft. Please try again.' }, { status: 500 })
   }
 }

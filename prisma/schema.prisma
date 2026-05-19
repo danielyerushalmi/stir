@@ -28,6 +28,8 @@ model Restaurant {
   voiceSamples VoiceSample[]
   insights     Insight[]
   subscription Subscription?
+
+  @@index([userId])
 }
 
 model VoiceSample {
@@ -38,6 +40,8 @@ model VoiceSample {
   sampleReview  String     @db.Text
   ownerResponse String     @db.Text
   createdAt     DateTime   @default(now())
+
+  @@index([restaurantId])
 }
 
 model Platform {
@@ -71,6 +75,7 @@ model Review {
   response     ReviewResponse?
 
   @@unique([platform, externalId])
+  @@index([restaurantId, reviewDate(sort: Desc)])
 }
 
 model ReviewResponse {
@@ -95,6 +100,8 @@ model Insight {
   platforms    String[]
   isRead       Boolean    @default(false)
   createdAt    DateTime   @default(now())
+
+  @@index([restaurantId])
 }
 
 model Subscription {
