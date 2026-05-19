@@ -105,7 +105,7 @@ export default async function DashboardPage({
             : <div className="flex flex-col gap-3">
                 {insights.map(i => (
                   <div key={i.id} className="rounded-lg bg-warm-gray p-3">
-                    <p className="text-xs font-medium text-orange mb-0.5">{i.type}</p>
+                    <p className="text-xs font-medium text-orange mb-0.5">{{ ALERT: 'Alert', TIP: 'Tip', DELIVERY_GAP: 'Delivery' }[i.type] ?? i.type}</p>
                     <p className="text-sm font-medium text-charcoal">{i.title}</p>
                     <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{i.body}</p>
                   </div>

@@ -14,6 +14,8 @@ export async function POST(req: Request) {
   const { reviewType, sampleReview, ownerResponse } = await req.json()
   if (!reviewType || !sampleReview || !ownerResponse)
     return NextResponse.json({ error: 'All fields required' }, { status: 400 })
+  if (sampleReview.length > 1000 || ownerResponse.length > 1000)
+    return NextResponse.json({ error: 'Sample text exceeds maximum length (1000 characters)' }, { status: 400 })
 
   const restaurant = await db.restaurant.findFirst({ where: { userId: user.id } })
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })

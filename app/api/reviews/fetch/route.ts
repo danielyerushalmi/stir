@@ -38,14 +38,17 @@ export async function POST() {
     let newCount = 0
     let updatedCount = 0
 
-    for (const r of googleReviews) {
-      const existing = await db.review.findUnique({
-        where: { platform_externalId: { platform: 'GOOGLE', externalId: r.externalId } },
-      })
+    const existingIds = new Set(
+      (await db.review.findMany({
+        where: { restaurantId: restaurant.id, platform: 'GOOGLE' },
+        select: { externalId: true },
+      })).map(r => r.externalId),
+    )
 
-      if (existing) {
+    for (const r of googleReviews) {
+      if (existingIds.has(r.externalId)) {
         await db.review.update({
-          where: { id: existing.id },
+          where: { platform_externalId: { platform: 'GOOGLE', externalId: r.externalId } },
           data: { rating: r.rating, reviewText: r.reviewText, authorName: r.authorName },
         })
         updatedCount++
