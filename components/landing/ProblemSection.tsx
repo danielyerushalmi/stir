@@ -133,27 +133,44 @@ export function ProblemSection() {
   }
 
   return (
-    <section ref={containerRef} className="relative bg-cream-dark" style={{ height: '300vh' }}>
-      <div className="sticky top-0 h-screen flex items-center overflow-hidden">
-        <div className="mx-auto max-w-5xl w-full px-6 grid grid-cols-2 gap-16 items-center">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-semibold text-brown leading-snug">
-              Your reviews are talking.<br />
-              <span className="text-orange">Are you listening?</span>
+    <>
+      <div className="md:hidden">
+        <section className="bg-cream-dark py-24 px-6">
+          <div className="mx-auto max-w-4xl">
+            <h2 className="text-3xl font-semibold text-brown mb-12 text-center">
+              Your reviews are talking.<br />Are you listening?
             </h2>
-            <p className="mt-4 text-text-muted text-base leading-relaxed">
-              Every unanswered review is a missed chance to win back a customer — or convert a reader into a guest.
-            </p>
-            <StepIndicator activeStep={activeStepRaw} />
+            <div className="flex flex-col gap-6">
+              {PAIN_POINTS.map(p => <div key={p.id}>{p.content}</div>)}
+            </div>
           </div>
-          <div className="relative h-64">
-            {PAIN_POINTS.map((point, i) => (
-              <ActivePainPoint key={point.id} point={point} index={i} activeStepRaw={activeStepRaw} />
-            ))}
-          </div>
-        </div>
+        </section>
       </div>
-    </section>
+
+      <div className="hidden md:block">
+        <section ref={containerRef} className="relative bg-cream-dark" style={{ height: '300vh' }}>
+          <div className="sticky top-0 h-screen flex items-center overflow-hidden">
+            <div className="mx-auto max-w-5xl w-full px-6 grid grid-cols-2 gap-16 items-center">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-semibold text-brown leading-snug">
+                  Your reviews are talking.<br />
+                  <span className="text-orange">Are you listening?</span>
+                </h2>
+                <p className="mt-4 text-text-muted text-base leading-relaxed">
+                  Every unanswered review is a missed chance to win back a customer — or convert a reader into a guest.
+                </p>
+                <StepIndicator activeStep={activeStepRaw} />
+              </div>
+              <div className="relative h-64">
+                {PAIN_POINTS.map((point, i) => (
+                  <ActivePainPoint key={point.id} point={point} index={i} activeStepRaw={activeStepRaw} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </>
   )
 }
 

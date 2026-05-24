@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { getOrCreateDbUser } from '@/lib/user'
 import { getScoreResult } from '@/lib/scoring'
 import { ScoreCard } from '@/components/dashboard/ScoreCard'
+import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner'
 
 export default async function DashboardPage({
   searchParams,
@@ -57,15 +58,10 @@ export default async function DashboardPage({
       )}
 
       {searchParams.upgrade && (
-        <div className="mb-6 flex items-center justify-between rounded-xl border border-orange/40 bg-orange-light px-5 py-4">
-          <div>
-            <p className="font-medium text-orange text-sm">Upgrade to {searchParams.upgrade}</p>
-            <p className="text-xs text-orange/80 mt-0.5">Paid plans are coming soon. You&apos;ll be notified when they launch.</p>
-          </div>
-        </div>
+        <UpgradeBanner planName={searchParams.upgrade} />
       )}
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <ScoreCard label="Overall Score" score={scores.overall} trend={scores.trend} subtitle="Dine-in platforms only" />
         <ScoreCard label="Delivery Score" score={scores.deliveryScore} subtitle="Delivery orders only" />
         <ScoreCard label="Awaiting Reply" score={awaitingReply} integer subtitle={awaitingReply === 1 ? '1 unanswered review' : `${awaitingReply} unanswered reviews`} />
@@ -78,7 +74,10 @@ export default async function DashboardPage({
             <Link href="/dashboard/reviews" className="text-xs text-orange hover:underline">View all →</Link>
           </div>
           {recentReviews.length === 0
-            ? <p className="text-sm text-text-muted">No reviews yet.</p>
+            ? <div>
+                <p className="text-sm text-text-muted">Connect your Google account to start pulling in reviews.</p>
+                <Link href="/dashboard/settings?tab=platforms" className="bg-orange text-white rounded-lg px-4 py-2 text-sm inline-block mt-3">Connect Google</Link>
+              </div>
             : <div className="flex flex-col gap-0">
                 {recentReviews.map(r => (
                   <div key={r.id} className="flex items-start gap-3 py-3 border-b border-border last:border-0">

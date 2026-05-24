@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { getOrCreateDbUser } from '@/lib/user'
 import { getOAuthClient, postGoogleReply, GoogleDisconnectedError } from '@/lib/google'
+import { checkRateLimit } from '@/lib/redis'
 
 export async function POST(req: Request) {
   const { userId } = auth()
@@ -14,8 +15,18 @@ export async function POST(req: Request) {
   const restaurant = await db.restaurant.findFirst({ where: { userId: user.id } })
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
 
+  const allowed = await checkRateLimit(`respond:${restaurant.id}`, 30, 60)
+  if (!allowed) return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 })
+
   const { reviewId, finalText, action, postToGoogle } = await req.json()
-  if (action === 'approve' && typeof finalText === 'string' && finalText.length > 2000)
+  const VALID_ACTIONS = ['approve', 'dismiss']
+  if (!action || !VALID_ACTIONS.includes(action))
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+  if (typeof finalText !== 'string')
+    return NextResponse.json({ error: 'finalText must be a string' }, { status: 400 })
+  if (finalText.trim().length === 0)
+    return NextResponse.json({ error: 'finalText must not be empty' }, { status: 400 })
+  if (action === 'approve' && finalText.length > 2000)
     return NextResponse.json({ error: 'Response text too long (max 2000 characters)' }, { status: 400 })
 
   const review = await db.review.findFirst({

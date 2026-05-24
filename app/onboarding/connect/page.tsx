@@ -54,7 +54,11 @@ export default function ConnectStep() {
   async function handleContinue() {
     if (!connected.has('GOOGLE')) { setError('Please connect Google to continue.'); return }
     setLoading(true)
-    router.push('/onboarding/voice')
+    try {
+      router.push('/onboarding/voice')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

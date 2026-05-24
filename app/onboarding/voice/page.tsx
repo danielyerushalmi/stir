@@ -21,7 +21,7 @@ export default function VoicePage() {
   const [saving, setSaving] = useState(false)
 
   const scenario = SCENARIOS[step]
-  const completed = step  // count of steps already passed, not typed
+  const completed = Object.keys(responses).length
 
   async function saveAndNext() {
     const text = responses[scenario.type]?.trim()

@@ -14,6 +14,14 @@ export async function POST(req: Request) {
   const { platform, externalId } = await req.json()
   const VALID_PLATFORMS = ['GOOGLE', 'YELP', 'TRIPADVISOR', 'FACEBOOK', 'DOORDASH', 'UBEREATS', 'GRUBHUB']
   if (!platform || !VALID_PLATFORMS.includes(platform)) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
+  if (externalId !== undefined && externalId !== null) {
+    if (platform === 'GOOGLE') {
+      return NextResponse.json({ error: 'Google externalId must come from the OAuth callback, not user input' }, { status: 400 })
+    }
+    if (!/^[a-zA-Z0-9_\-]{1,128}$/.test(String(externalId))) {
+      return NextResponse.json({ error: 'Invalid externalId format' }, { status: 400 })
+    }
+  }
   const restaurant = await db.restaurant.findFirst({ where: { userId: user.id } })
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
 
