@@ -24,14 +24,20 @@ type FilterOption = typeof FILTER_OPTIONS[number]
 
 export default function InsightsPage() {
   const [insights, setInsights] = useState<Insight[]>([])
+  const [loading, setLoading] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
   const [filter, setFilter] = useState<FilterOption>('ALL')
 
   async function loadInsights() {
-    const res = await fetch('/api/insights')
-    const data = await res.json()
-    setInsights(data.insights ?? [])
+    setLoading(true)
+    try {
+      const res = await fetch('/api/insights')
+      const data = await res.json()
+      setInsights(data.insights ?? [])
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { loadInsights() }, [])
@@ -69,6 +75,7 @@ export default function InsightsPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
+            aria-pressed={filter === f}
             className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${filter === f ? 'bg-orange text-white border-orange' : 'bg-white border-border text-text-muted hover:border-orange hover:text-orange'}`}
           >
             {f === 'ALL' ? 'All' : f === 'DELIVERY_GAP' ? 'Delivery' : TYPE_META[f].label}
@@ -76,7 +83,13 @@ export default function InsightsPage() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col gap-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="animate-pulse bg-orange-light/20 rounded-2xl h-24" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-border bg-white p-8 text-center">
           <p className="text-text-muted text-sm mb-4">
             {insights.length === 0 ? 'No insights yet.' : 'No insights match this filter.'}

@@ -14,15 +14,18 @@ export async function GET(req: Request) {
   if (!restaurant) return NextResponse.json({ reviews: [], total: 0, pages: 0 })
 
   const url = new URL(req.url)
-  const page = parseInt(url.searchParams.get('page') ?? '1')
+  const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1') || 1)
   const platform = url.searchParams.get('platform') || undefined
-  const rating = url.searchParams.get('rating') ? parseInt(url.searchParams.get('rating')!) : undefined
+  const parsedRating = url.searchParams.get('rating') ? parseInt(url.searchParams.get('rating')!) : undefined
+  const rating = parsedRating !== undefined && !Number.isNaN(parsedRating) && parsedRating >= 1 && parsedRating <= 5
+    ? parsedRating
+    : undefined
   const pageSize = 10
 
   const where = {
     restaurantId: restaurant.id,
     ...(platform && { platform }),
-    ...(rating && { rating }),
+    ...(rating !== undefined && { rating }),
   }
 
   const [reviews, total] = await Promise.all([

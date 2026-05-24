@@ -30,7 +30,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className={cn('flex flex-col bg-brown text-white transition-all duration-200 min-h-screen', collapsed ? 'w-16' : 'w-56')}>
+    <aside className={cn('hidden md:flex flex-col bg-brown text-white transition-all duration-200 min-h-screen', collapsed ? 'w-16' : 'w-56')}>
       <div className="flex items-center justify-between px-4 py-5">
         {!collapsed && <StirLogo variant="white" size="sm" />}
         <button onClick={toggleCollapsed} className="ml-auto rounded p-1 hover:bg-brown-mid/50 text-white/60 hover:text-white transition-colors" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
@@ -41,7 +41,7 @@ export function Sidebar() {
         {NAV.map(item => {
           const active = pathname === item.href
           return (
-            <Link key={item.href} href={item.href} title={collapsed ? item.label : undefined} className={cn('flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors', active ? 'bg-orange text-white shadow-sm' : 'text-white/70 hover:bg-brown-mid/50 hover:text-white')}>
+            <Link key={item.href} href={item.href} title={collapsed ? item.label : undefined} aria-current={active ? 'page' : undefined} className={cn('flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors', active ? 'bg-orange text-white shadow-sm' : 'text-white/70 hover:bg-brown-mid/50 hover:text-white')}>
               <span className="text-base shrink-0">{item.icon}</span>
               {!collapsed && <span>{item.label}</span>}
             </Link>

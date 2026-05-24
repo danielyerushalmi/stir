@@ -31,6 +31,7 @@ export default function ReviewsPage() {
     if (filter.platform) params.set('platform', filter.platform)
     if (filter.rating) params.set('rating', filter.rating)
     const res = await fetch(`/api/reviews?${params}`)
+    if (!res.ok) { setToast({ message: 'Failed to load reviews. Please try again.', type: 'error' }); setLoading(false); return }
     const data = await res.json()
     setReviews(data.reviews ?? [])
     setTotalPages(data.pages ?? 1)
@@ -67,6 +68,7 @@ export default function ReviewsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reviewId, finalText, action: 'approve', postToGoogle: true }),
     })
+    if (!res.ok) { setToast({ message: 'Failed to post response. Please try again.', type: 'error' }); return }
     const data = await res.json()
     if (data.warning) setToast({ message: data.warning, type: 'error' })
     setActiveDrafts(prev => { const n = { ...prev }; delete n[reviewId]; return n })
@@ -74,11 +76,12 @@ export default function ReviewsPage() {
   }
 
   async function dismissDraft(reviewId: string) {
-    await fetch('/api/reviews/respond', {
+    const res = await fetch('/api/reviews/respond', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reviewId, action: 'dismiss' }),
     })
+    if (!res.ok) { setToast({ message: 'Failed to dismiss draft. Please try again.', type: 'error' }); return }
     setActiveDrafts(prev => { const n = { ...prev }; delete n[reviewId]; return n })
     loadReviews()
   }
@@ -111,6 +114,7 @@ export default function ReviewsPage() {
           <button
             key={p}
             onClick={() => { setPage(1); setFilter(f => ({ ...f, platform: p })) }}
+            aria-pressed={filter.platform === p}
             className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${filter.platform === p ? 'bg-orange text-white border-orange' : 'bg-white border-border text-text-muted hover:border-orange hover:text-orange'}`}
           >
             {p || 'All platforms'}
@@ -120,6 +124,7 @@ export default function ReviewsPage() {
           <button
             key={r}
             onClick={() => { setPage(1); setFilter(f => ({ ...f, rating: r })) }}
+            aria-pressed={filter.rating === r}
             className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${filter.rating === r ? 'bg-orange text-white border-orange' : 'bg-white border-border text-text-muted hover:border-orange hover:text-orange'}`}
           >
             {r ? `${r}★` : 'All ratings'}

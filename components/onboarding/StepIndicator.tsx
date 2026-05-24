@@ -24,7 +24,12 @@ export function StepIndicator({ currentStep }: StepIndicatorProps) {
                   !done && !active && 'bg-border text-text-lighter',
                 )}
               >
-                {done ? '✓' : stepNum}
+                {done ? (
+                  <>
+                    <span aria-hidden="true">✓</span>
+                    <span className="sr-only">Completed</span>
+                  </>
+                ) : stepNum}
               </div>
               <span className={cn('text-xs', active ? 'text-orange font-medium' : 'text-text-lighter')}>{label}</span>
             </div>

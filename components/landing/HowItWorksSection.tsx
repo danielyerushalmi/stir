@@ -191,19 +191,43 @@ export function HowItWorksSection() {
   }
 
   return (
-    <section id="how-it-works" ref={containerRef} className="relative bg-white" style={{ height: '300vh' }}>
-      <div className="sticky top-0 h-screen flex items-center overflow-hidden">
-        <div className="mx-auto max-w-5xl w-full px-6 grid grid-cols-2 gap-16 items-center">
-          <MockupContainer activeStep={activeStep} scrollYProgress={scrollYProgress} />
-
-          <div className="flex flex-col gap-8">
-            <h2 className="text-3xl font-semibold text-brown">Up and running in 10 minutes</h2>
-            {STEPS.map((step, i) => (
-              <StepCard key={step.num} step={step} index={i} activeStep={activeStep} />
-            ))}
+    <>
+      <div className="md:hidden">
+        <section id="how-it-works" className="bg-white py-24 px-6">
+          <div className="mx-auto max-w-4xl">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-semibold text-brown mb-4">Up and running in 10 minutes</h2>
+              <p className="text-text-muted">No long setup. No technical knowledge required.</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              {STEPS.map(step => (
+                <div key={step.num}>
+                  <div className="w-10 h-10 rounded-full bg-orange-light flex items-center justify-center text-orange font-semibold text-sm mb-4">{step.num}</div>
+                  <h3 className="font-semibold text-brown text-lg mb-2">{step.title}</h3>
+                  <p className="text-text-muted text-base leading-relaxed">{step.body}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
       </div>
-    </section>
+
+      <div className="hidden md:block">
+        <section id="how-it-works" ref={containerRef} className="relative bg-white" style={{ height: '300vh' }}>
+          <div className="sticky top-0 h-screen flex items-center overflow-hidden">
+            <div className="mx-auto max-w-5xl w-full px-6 grid grid-cols-2 gap-16 items-center">
+              <MockupContainer activeStep={activeStep} scrollYProgress={scrollYProgress} />
+
+              <div className="flex flex-col gap-8">
+                <h2 className="text-3xl font-semibold text-brown">Up and running in 10 minutes</h2>
+                {STEPS.map((step, i) => (
+                  <StepCard key={step.num} step={step} index={i} activeStep={activeStep} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { Toast } from '@/components/ui/Toast'
 import { RestaurantTab } from './_components/RestaurantTab'
@@ -29,23 +30,40 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'account',    label: 'Account' },
 ]
 
+const VALID_TABS: Tab[] = ['restaurant', 'platforms', 'voice', 'account']
+
 export default function SettingsPage() {
   const { user } = useUser()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<Tab>('restaurant')
   const [data, setData] = useState<SettingsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
+
+  // Read ?tab= on mount so OAuth redirects land on the correct tab
+  useEffect(() => {
+    const tab = searchParams.get('tab') as Tab | null
+    if (tab && VALID_TABS.includes(tab)) setActiveTab(tab)
+  }, [searchParams])
 
   const showToast = useCallback((message: string, type: 'success' | 'error') => {
     setToast({ message, type })
   }, [])
 
-  useEffect(() => {
+  const loadSettings = useCallback(() => {
+    setLoading(true)
+    setError(false)
     fetch('/api/settings')
       .then(r => r.json())
       .then(d => setData(d))
+      .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
 
   const memberSince = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
@@ -73,9 +91,17 @@ export default function SettingsPage() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-text-lighter">Loading…</p>
-      ) : !data ? (
-        <p className="text-sm text-red-dark">Failed to load settings. Please refresh.</p>
+        <div className="animate-pulse space-y-4">
+          <div className="h-10 bg-orange-light/20 rounded-lg" />
+          <div className="h-10 bg-orange-light/20 rounded-lg" />
+          <div className="h-10 bg-orange-light/20 rounded-lg" />
+          <div className="h-10 bg-orange-light/20 rounded-lg" />
+        </div>
+      ) : error || !data ? (
+        <div>
+          <p className="text-sm text-red-dark">Failed to load settings. Please refresh.</p>
+          <button onClick={loadSettings} className="mt-2 text-sm text-orange hover:underline">Try again</button>
+        </div>
       ) : (
         <>
           {activeTab === 'restaurant' && (

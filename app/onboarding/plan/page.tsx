@@ -29,7 +29,7 @@ export default function PlanPage() {
         <h1 className="text-2xl font-semibold text-charcoal mb-2">Choose your plan</h1>
         <p className="text-text-muted text-sm">You can upgrade at any time from your dashboard.</p>
       </div>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {PLANS.map(plan => (
           <Card key={plan.id} className={cn('cursor-pointer transition-all', plan.highlight && 'border-orange ring-2 ring-orange/20', selected === plan.id && 'shadow-md')} onClick={() => setSelected(plan.id)}>
             {plan.highlight && <Badge variant="orange" className="mb-3">Most popular</Badge>}

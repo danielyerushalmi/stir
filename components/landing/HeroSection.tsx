@@ -1,6 +1,7 @@
 'use client'
 import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const WORDS = ['Every', 'review', 'deserves', 'a', 'reply.']
 
@@ -100,10 +101,13 @@ export function HeroSection() {
             >
               {/* Inner clip: rounds image corners without clipping shadow or cards */}
               <div className="absolute inset-0 rounded-2xl overflow-hidden">
-                <img
+                <Image
                   src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=80"
                   alt="Warm restaurant dining room"
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
+                  className="object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-brown/30 to-transparent pointer-events-none" />
               </div>
