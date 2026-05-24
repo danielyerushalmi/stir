@@ -53,7 +53,7 @@ const STEPS = [
     mockup: (
       <div>
         <p className="text-xs text-text-lighter mb-3 uppercase tracking-wide">AI Draft ready</p>
-        <div className="rounded-xl border-l-4 border-l-orange border border-orange/20 bg-orange-light p-4">
+        <div className="rounded-xl border border-orange/30 bg-orange-light p-4">
           <p className="text-xs text-orange font-medium mb-2 uppercase tracking-wide">AI Draft</p>
           <p className="text-sm text-brown mb-3">&quot;So glad you came in! The carbonara is Marco&apos;s recipe — he&apos;s been making it for 20 years. Hope to see you again soon.&quot;</p>
           <div className="flex gap-2">
@@ -80,21 +80,78 @@ function StepMockup({ activeStep, index }: { activeStep: MotionValue<number>; in
   )
 }
 
-function StepCard({ step, index, activeStep }: { step: typeof STEPS[0]; index: number; activeStep: MotionValue<number> }) {
+function MockupContainer({
+  activeStep,
+  scrollYProgress,
+}: {
+  activeStep: MotionValue<number>
+  scrollYProgress: MotionValue<number>
+}) {
+  const barWidth = useTransform(
+    scrollYProgress,
+    [0, 0.4, 0.7, 1],
+    ['33%', '66%', '100%', '100%']
+  )
+
+  return (
+    <div className="rounded-2xl border border-border bg-cream shadow-lg relative overflow-hidden">
+      <div className="h-0.5 w-full bg-orange/10">
+        <motion.div className="h-full bg-orange" style={{ width: barWidth }} />
+      </div>
+      <div className="relative min-h-48">
+        {STEPS.map((_, i) => (
+          <StepMockup key={i} activeStep={activeStep} index={i} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function StepCard({
+  step,
+  index,
+  activeStep,
+}: {
+  step: typeof STEPS[0]
+  index: number
+  activeStep: MotionValue<number>
+}) {
   const opacity = useTransform(activeStep, (v: number) =>
     0.35 + Math.max(0, 1 - Math.abs(v - index)) * 0.65
   )
   const scale = useTransform(activeStep, (v: number) =>
     0.97 + Math.max(0, 1 - Math.abs(v - index)) * 0.03
   )
+  const circleActive = useTransform(activeStep, (v: number) =>
+    Math.max(0, 1 - Math.abs(v - index))
+  )
+  const circleInactive = useTransform(activeStep, (v: number) =>
+    1 - Math.max(0, 1 - Math.abs(v - index))
+  )
+
   return (
-    <motion.div className="flex gap-4" style={{ opacity, scale }}>
-      <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 bg-orange-light text-orange">
-        {step.num}
+    <motion.div
+      className="flex gap-4"
+      style={{ opacity, scale }}
+      whileHover={{ x: 4, transition: { type: 'spring', stiffness: 300, damping: 22 } }}
+    >
+      <div className="w-10 h-10 shrink-0 relative">
+        <motion.div
+          className="absolute inset-0 rounded-full bg-orange-light flex items-center justify-center"
+          style={{ opacity: circleInactive }}
+        >
+          <span className="text-sm font-semibold text-orange">{step.num}</span>
+        </motion.div>
+        <motion.div
+          className="absolute inset-0 rounded-full bg-orange flex items-center justify-center"
+          style={{ opacity: circleActive }}
+        >
+          <span className="text-sm font-semibold text-white">{step.num}</span>
+        </motion.div>
       </div>
       <div>
         <h3 className="font-semibold text-brown mb-1">{step.title}</h3>
-        <p className="text-text-muted text-sm leading-relaxed">{step.body}</p>
+        <p className="text-text-muted text-base leading-relaxed">{step.body}</p>
       </div>
     </motion.div>
   )
@@ -124,7 +181,7 @@ export function HowItWorksSection() {
               <div key={step.num}>
                 <div className="w-10 h-10 rounded-full bg-orange-light flex items-center justify-center text-orange font-semibold text-sm mb-4">{step.num}</div>
                 <h3 className="font-semibold text-brown text-lg mb-2">{step.title}</h3>
-                <p className="text-text-muted text-sm leading-relaxed">{step.body}</p>
+                <p className="text-text-muted text-base leading-relaxed">{step.body}</p>
               </div>
             ))}
           </div>
@@ -137,14 +194,8 @@ export function HowItWorksSection() {
     <section id="how-it-works" ref={containerRef} className="relative bg-white" style={{ height: '300vh' }}>
       <div className="sticky top-0 h-screen flex items-center overflow-hidden">
         <div className="mx-auto max-w-5xl w-full px-6 grid grid-cols-2 gap-16 items-center">
-          {/* Left: live mockup */}
-          <div className="rounded-2xl border border-border bg-cream shadow-lg relative min-h-48">
-            {STEPS.map((_, i) => (
-              <StepMockup key={i} activeStep={activeStep} index={i} />
-            ))}
-          </div>
+          <MockupContainer activeStep={activeStep} scrollYProgress={scrollYProgress} />
 
-          {/* Right: step list */}
           <div className="flex flex-col gap-8">
             <h2 className="text-3xl font-semibold text-brown">Up and running in 10 minutes</h2>
             {STEPS.map((step, i) => (
