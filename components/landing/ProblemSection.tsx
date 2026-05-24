@@ -1,10 +1,24 @@
 'use client'
-import { useRef } from 'react'
-import { motion, useScroll, useTransform, useReducedMotion, MotionValue } from 'framer-motion'
+import { useRef, useEffect } from 'react'
+import { motion, useScroll, useTransform, useReducedMotion, MotionValue, animate, useInView, useMotionValue } from 'framer-motion'
+
+function CountUp({ to }: { to: number }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const isInView = useInView(ref, { once: true })
+  const count = useMotionValue(0)
+  const rounded = useTransform(count, Math.round)
+
+  useEffect(() => {
+    if (isInView) animate(count, to, { duration: 1.5, ease: [0.16, 1, 0.3, 1] })
+  }, [isInView, count, to])
+
+  return <motion.span ref={ref}>{rounded}</motion.span>
+}
 
 const PAIN_POINTS = [
   {
     id: 'unanswered',
+    label: 'Unanswered reviews',
     content: (
       <div className="rounded-xl border border-red-light bg-red-light/40 p-6">
         <div className="flex items-center justify-between mb-3">
@@ -17,6 +31,7 @@ const PAIN_POINTS = [
   },
   {
     id: 'competitor',
+    label: 'Falling behind',
     content: (
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-xl border border-green/30 bg-green-light/40 p-4 text-center">
@@ -34,15 +49,62 @@ const PAIN_POINTS = [
   },
   {
     id: 'stat',
+    label: 'The decision moment',
     content: (
       <div className="rounded-xl border border-orange/30 bg-orange-light p-6 text-center">
-        <p className="text-5xl font-semibold text-orange mb-2">67%</p>
+        <p className="text-5xl font-semibold text-orange mb-2"><CountUp to={67} />%</p>
         <p className="text-sm text-text-muted">of diners check reviews before choosing a restaurant</p>
         <p className="text-xs text-text-lighter mt-1">— Google Consumer Insights</p>
       </div>
     ),
   },
 ]
+
+function StepDot({ index, activeStep }: { index: number; activeStep: MotionValue<number> }) {
+  const scale = useTransform(activeStep, (v: number) =>
+    1 + Math.max(0, 1 - Math.abs(v - index)) * 0.6
+  )
+  const opacity = useTransform(activeStep, (v: number) =>
+    0.2 + Math.max(0, 1 - Math.abs(v - index)) * 0.8
+  )
+  return (
+    <motion.div
+      className="w-2 h-2 rounded-full bg-orange"
+      style={{ scale, opacity }}
+    />
+  )
+}
+
+function StepDotLabel({ label, index, activeStep }: { label: string; index: number; activeStep: MotionValue<number> }) {
+  const opacity = useTransform(activeStep, (v: number) =>
+    Math.max(0, 1 - Math.abs(v - index))
+  )
+  return (
+    <motion.span
+      className="absolute inset-0 text-sm font-medium text-orange whitespace-nowrap"
+      style={{ opacity }}
+    >
+      {label}
+    </motion.span>
+  )
+}
+
+function StepIndicator({ activeStep }: { activeStep: MotionValue<number> }) {
+  return (
+    <div className="mt-10 flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
+        {PAIN_POINTS.map((_, i) => (
+          <StepDot key={i} index={i} activeStep={activeStep} />
+        ))}
+      </div>
+      <div className="relative h-5 min-w-[160px]">
+        {PAIN_POINTS.map((p, i) => (
+          <StepDotLabel key={p.id} label={p.label} index={i} activeStep={activeStep} />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function ProblemSection() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -79,9 +141,10 @@ export function ProblemSection() {
               Your reviews are talking.<br />
               <span className="text-orange">Are you listening?</span>
             </h2>
-            <p className="mt-4 text-text-muted text-sm leading-relaxed">
+            <p className="mt-4 text-text-muted text-base leading-relaxed">
               Every unanswered review is a missed chance to win back a customer — or convert a reader into a guest.
             </p>
+            <StepIndicator activeStep={activeStepRaw} />
           </div>
           <div className="relative h-64">
             {PAIN_POINTS.map((point, i) => (
@@ -103,17 +166,18 @@ function ActivePainPoint({
   index: number
   activeStepRaw: MotionValue<number>
 }) {
-  // Smooth crossfade: opacity is 1 at exact index, fades to 0 over ±1 scroll unit
   const opacity = useTransform(activeStepRaw, (v: number) =>
     Math.max(0, 1 - Math.abs(v - index))
   )
-  // Subtle y offset: active is at 0, items above/below drift ±20px
   const y = useTransform(activeStepRaw, (v: number) =>
-    (v - index) * 20
+    (v - index) * 24
+  )
+  const scale = useTransform(activeStepRaw, (v: number) =>
+    0.94 + Math.max(0, 1 - Math.abs(v - index)) * 0.06
   )
 
   return (
-    <motion.div className="absolute inset-0" style={{ opacity, y }}>
+    <motion.div className="absolute inset-0" style={{ opacity, y, scale }}>
       {point.content}
     </motion.div>
   )

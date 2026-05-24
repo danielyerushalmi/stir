@@ -20,7 +20,7 @@ const config: Config = {
         charcoal: '#2C1810',
         'warm-gray': '#FAF7F2',
       },
-      fontFamily: { sans: ['Inter', 'sans-serif'] },
+      fontFamily: { sans: ['var(--font-figtree)', 'sans-serif'] },
     },
   },
   plugins: [],

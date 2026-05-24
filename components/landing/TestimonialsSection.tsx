@@ -22,6 +22,7 @@ export function TestimonialsSection() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1, duration: 0.5, ease: 'easeOut' }}
+              whileHover={{ y: -5, transition: { type: 'spring', stiffness: 280, damping: 20 } }}
               className="rounded-2xl border border-border p-6 bg-cream"
             >
               <motion.div
@@ -33,7 +34,7 @@ export function TestimonialsSection() {
               >
                 {'★'.repeat(t.rating)}
               </motion.div>
-              <p className="text-brown text-sm leading-relaxed mb-4">&quot;{t.quote}&quot;</p>
+              <p className="text-brown text-base leading-relaxed mb-4">&quot;{t.quote}&quot;</p>
               <div>
                 <p className="font-medium text-brown text-sm">{t.name}</p>
                 <p className="text-xs text-text-muted">{t.role}</p>
