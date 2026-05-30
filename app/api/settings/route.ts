@@ -24,6 +24,8 @@ export async function GET() {
       cuisineType: restaurant.cuisineType,
       city: restaurant.city,
       vibe: restaurant.vibe,
+      yelpRating: restaurant.yelpRating,
+      yelpReviewCount: restaurant.yelpReviewCount,
     },
     platforms: restaurant.platforms.map(p => ({
       name: p.name,
