@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal'
 interface ResponseDraftProps {
   reviewId: string
   draft: string
+  platform?: string
   onApprove: (reviewId: string, finalText: string) => Promise<void>
   onDismiss: (reviewId: string) => Promise<void>
 }
@@ -26,12 +27,13 @@ function TypingDots() {
   )
 }
 
-export function ResponseDraft({ reviewId, draft, onApprove, onDismiss }: ResponseDraftProps) {
+export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss }: ResponseDraftProps) {
   const [text, setText] = useState(draft)
   const [loading, setLoading] = useState<'approve' | 'dismiss' | null>(null)
   const [posted, setPosted] = useState(false)
   const [showTyping, setShowTyping] = useState(true)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => setShowTyping(false), 1000)
@@ -114,13 +116,28 @@ export function ResponseDraft({ reviewId, draft, onApprove, onDismiss }: Respons
                 className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-brown focus:outline-none focus:ring-2 focus:ring-orange/20 mb-3"
               />
               <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  disabled={loading !== null}
-                  onClick={() => setShowConfirm(true)}
-                >
-                  Approve & Post
-                </Button>
+                {platform === 'YELP' ? (
+                  <Button
+                    size="sm"
+                    disabled={loading !== null}
+                    title="Yelp doesn't allow third-party posting — copy this and paste it into Yelp directly."
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(text)
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 2000)
+                    }}
+                  >
+                    {copied ? 'Copied!' : 'Copy to clipboard'}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    disabled={loading !== null}
+                    onClick={() => setShowConfirm(true)}
+                  >
+                    Approve & Post
+                  </Button>
+                )}
                 <Button
                   variant="secondary"
                   size="sm"
