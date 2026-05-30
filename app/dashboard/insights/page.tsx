@@ -117,6 +117,11 @@ export default function InsightsPage() {
                   </div>
                   <h3 className="font-semibold text-charcoal mb-1">{insight.title}</h3>
                   <p className="text-sm text-text-muted">{insight.body}</p>
+                  {insight.platforms.includes('YELP') && (
+                    <p className="text-xs text-text-lighter mt-1 italic">
+                      Yelp insights based on 3 most recent reviews.
+                    </p>
+                  )}
                 </div>
                 {!insight.isRead && (
                   <button
