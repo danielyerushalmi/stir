@@ -15,19 +15,22 @@ model User {
 }
 
 model Restaurant {
-  id           String        @id @default(cuid())
-  userId       String
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name         String
-  cuisineType  String
-  city         String
-  vibe         String        @db.Text
-  createdAt    DateTime      @default(now())
-  platforms    Platform[]
-  reviews      Review[]
-  voiceSamples VoiceSample[]
-  insights     Insight[]
-  subscription Subscription?
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  cuisineType     String
+  city            String
+  vibe            String        @db.Text
+  yelpBusinessId  String?
+  yelpRating      Float?
+  yelpReviewCount Int?
+  createdAt       DateTime      @default(now())
+  platforms       Platform[]
+  reviews         Review[]
+  voiceSamples    VoiceSample[]
+  insights        Insight[]
+  subscription    Subscription?
 
   @@index([userId])
 }
