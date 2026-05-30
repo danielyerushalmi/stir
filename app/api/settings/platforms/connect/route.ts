@@ -12,8 +12,8 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
   const { platform } = await req.json()
-  const VALID_PLATFORMS = ['GOOGLE', 'YELP', 'TRIPADVISOR', 'FACEBOOK', 'DOORDASH', 'UBEREATS', 'GRUBHUB']
-  if (!platform || !VALID_PLATFORMS.includes(platform)) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
+  const MOCK_PLATFORMS = ['TRIPADVISOR', 'FACEBOOK', 'DOORDASH', 'UBEREATS', 'GRUBHUB']
+  if (!platform || !MOCK_PLATFORMS.includes(platform)) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
 
   const restaurant = await db.restaurant.findFirst({ where: { userId: user.id } })
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
