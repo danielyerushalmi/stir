@@ -13,16 +13,16 @@ interface PlatformData {
 interface PlatformsTabProps {
   platforms: PlatformData[]
   onToast: (message: string, type: 'success' | 'error') => void
+  yelpData?: { rating: number; reviewCount: number }
 }
 
 const PLATFORM_META: Record<string, { label: string; emoji: string; bg: string }> = {
   GOOGLE:      { label: 'Google Business', emoji: 'G', bg: 'bg-blue-50' },
-  YELP:        { label: 'Yelp',            emoji: 'Y', bg: 'bg-orange-light' },
   TRIPADVISOR: { label: 'TripAdvisor',     emoji: 'T', bg: 'bg-green-light' },
   FACEBOOK:    { label: 'Facebook',        emoji: 'F', bg: 'bg-blue-50' },
 }
 
-const ALL_PLATFORMS = ['GOOGLE', 'YELP', 'TRIPADVISOR', 'FACEBOOK']
+const GENERIC_PLATFORMS = ['GOOGLE', 'TRIPADVISOR', 'FACEBOOK']
 
 const ERROR_MESSAGES: Record<string, string> = {
   google_denied: 'Google connection was cancelled.',
@@ -39,9 +39,11 @@ function formatSync(ts: string | null): string {
   return `Synced ${Math.floor(h / 24)}d ago`
 }
 
-export function PlatformsTab({ platforms: initial, onToast }: PlatformsTabProps) {
+export function PlatformsTab({ platforms: initial, onToast, yelpData }: PlatformsTabProps) {
   const [platforms, setPlatforms] = useState(initial)
   const [busy, setBusy] = useState<string | null>(null)
+  const [yelpConnected, setYelpConnected] = useState<{ rating: number; reviewCount: number } | null>(yelpData ?? null)
+  const [yelpForm, setYelpForm] = useState({ businessName: '', city: '' })
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -90,13 +92,56 @@ export function PlatformsTab({ platforms: initial, onToast }: PlatformsTabProps)
     }
   }
 
+  async function connectYelp() {
+    const businessName = yelpForm.businessName.trim()
+    const city = yelpForm.city.trim()
+    if (!businessName || !city) {
+      onToast('Enter business name and city', 'error')
+      return
+    }
+    setBusy('YELP')
+    try {
+      const res = await fetch('/api/platforms/yelp/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessName, location: city }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        onToast(data.error ?? 'Yelp connection failed', 'error')
+        return
+      }
+      setYelpConnected({ rating: data.rating, reviewCount: data.reviewCount })
+      setYelpForm({ businessName: '', city: '' })
+      onToast('Yelp connected', 'success')
+    } catch {
+      onToast('Something went wrong', 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function disconnectYelp() {
+    setBusy('YELP')
+    try {
+      const res = await fetch('/api/settings/platforms/YELP', { method: 'DELETE' })
+      if (!res.ok) throw new Error()
+      setYelpConnected(null)
+      onToast('Yelp disconnected', 'success')
+    } catch {
+      onToast('Something went wrong', 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   return (
     <Card>
       <h2 className="mb-1 text-sm font-semibold text-charcoal">Connected platforms</h2>
       <p className="mb-5 text-xs text-text-lighter">Manage which review platforms Stir syncs with.</p>
 
       <div className="flex flex-col divide-y divide-border">
-        {ALL_PLATFORMS.map(name => {
+        {GENERIC_PLATFORMS.map(name => {
           const p = getState(name)
           const meta = PLATFORM_META[name]
           return (
@@ -128,6 +173,65 @@ export function PlatformsTab({ platforms: initial, onToast }: PlatformsTabProps)
             </div>
           )
         })}
+
+        {/* Yelp — real API connection */}
+        {yelpConnected ? (
+          <div className="flex items-center gap-3 py-3">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-sm font-bold text-charcoal bg-orange-light">
+              Y
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-charcoal">Yelp</p>
+              <p className="text-xs text-text-lighter">
+                {yelpConnected.rating.toFixed(1)} ★ · {yelpConnected.reviewCount.toLocaleString()} reviews
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 flex-shrink-0">
+              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-light text-green">
+                <span className="h-1.5 w-1.5 rounded-full bg-green" />
+                Connected
+              </span>
+              <Button variant="secondary" size="sm" disabled={busy === 'YELP'} onClick={disconnectYelp}>
+                {busy === 'YELP' ? '…' : 'Disconnect'}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="py-3">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-sm font-bold text-charcoal bg-orange-light">
+                Y
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-charcoal">Yelp</p>
+                <p className="text-xs text-text-lighter">Connect to import reviews and aggregate rating</p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium bg-border text-text-lighter">
+                <span className="h-1.5 w-1.5 rounded-full bg-text-lighter" />
+                Disconnected
+              </span>
+            </div>
+            <div className="flex gap-2 ml-12">
+              <input
+                type="text"
+                placeholder="Restaurant name"
+                value={yelpForm.businessName}
+                onChange={e => setYelpForm(f => ({ ...f, businessName: e.target.value }))}
+                className="flex-1 rounded-lg border border-border px-3 py-1.5 text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-orange/20"
+              />
+              <input
+                type="text"
+                placeholder="City"
+                value={yelpForm.city}
+                onChange={e => setYelpForm(f => ({ ...f, city: e.target.value }))}
+                className="w-32 rounded-lg border border-border px-3 py-1.5 text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-orange/20"
+              />
+              <Button size="sm" disabled={busy === 'YELP'} onClick={connectYelp}>
+                {busy === 'YELP' ? '…' : 'Connect'}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </Card>
   )

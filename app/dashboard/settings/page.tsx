@@ -12,7 +12,15 @@ import { cn } from '@/lib/utils'
 type Tab = 'restaurant' | 'platforms' | 'voice' | 'account'
 
 interface SettingsData {
-  restaurant: { id: string; name: string; cuisineType: string; city: string; vibe: string }
+  restaurant: {
+    id: string
+    name: string
+    cuisineType: string
+    city: string
+    vibe: string
+    yelpRating: number | null
+    yelpReviewCount: number | null
+  }
   platforms: { name: string; isConnected: boolean; lastSyncedAt: string | null }[]
   voiceSamples: { id: string; reviewType: string; sampleReview: string; ownerResponse: string }[]
   subscription: { plan: string } | null
@@ -108,7 +116,15 @@ export default function SettingsPage() {
             <RestaurantTab restaurant={data.restaurant} onToast={showToast} />
           )}
           {activeTab === 'platforms' && (
-            <PlatformsTab platforms={data.platforms} onToast={showToast} />
+            <PlatformsTab
+              platforms={data.platforms}
+              onToast={showToast}
+              yelpData={
+                data.restaurant.yelpRating != null && data.restaurant.yelpReviewCount != null
+                  ? { rating: data.restaurant.yelpRating, reviewCount: data.restaurant.yelpReviewCount }
+                  : undefined
+              }
+            />
           )}
           {activeTab === 'voice' && (
             <VoiceTab voiceSamples={data.voiceSamples} onToast={showToast} />
