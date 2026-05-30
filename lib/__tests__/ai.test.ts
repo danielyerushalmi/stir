@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
-import { buildDraftSystemPrompt } from '../ai'
+import { buildDraftSystemPrompt, buildInsightsSystemPrompt } from '../ai'
 
 describe('buildDraftSystemPrompt', () => {
   it('includes restaurant name and vibe', () => {
@@ -19,5 +19,18 @@ describe('buildDraftSystemPrompt', () => {
   it('enforces the no-thank-you-for-feedback rule', () => {
     const prompt = buildDraftSystemPrompt('X', 'y', [])
     expect(prompt).toContain('Never start with')
+  })
+})
+
+describe('buildInsightsSystemPrompt', () => {
+  it('does not include Yelp note when hasYelp is false', () => {
+    const prompt = buildInsightsSystemPrompt(false)
+    expect(prompt).not.toContain('Yelp data is limited')
+    expect(prompt).toContain('restaurant business analyst')
+  })
+
+  it('includes Yelp 3-review note when hasYelp is true', () => {
+    const prompt = buildInsightsSystemPrompt(true)
+    expect(prompt).toContain('Yelp data is limited to the 3 most recent reviews')
   })
 })
