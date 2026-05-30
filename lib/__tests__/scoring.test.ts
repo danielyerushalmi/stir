@@ -33,6 +33,37 @@ describe('calculateOverallScore', () => {
   })
 })
 
+describe('calculateOverallScore with platformAggregates', () => {
+  it('uses aggregate value instead of stored review average for that platform', () => {
+    const reviews = [
+      makeReview('GOOGLE', 4, false, 10),
+      makeReview('YELP', 2, false, 10), // stored says 2★ — should be overridden
+    ]
+    // YELP aggregate = 4.5, totalWeight = 40 + 25 = 65
+    // score = 4 * (40/65) + 4.5 * (25/65) = 160/65 + 112.5/65 ≈ 4.2
+    const score = calculateOverallScore(reviews, { YELP: 4.5 })
+    expect(score).toBeCloseTo(4.2, 1)
+  })
+
+  it('includes an aggregate platform that has no stored reviews', () => {
+    const reviews = [makeReview('GOOGLE', 4, false, 10)]
+    // YELP has no stored reviews but aggregate = 3.0, totalWeight = 40 + 25 = 65
+    // score = 4 * (40/65) + 3.0 * (25/65) = 160/65 + 75/65 ≈ 3.6
+    const score = calculateOverallScore(reviews, { YELP: 3.0 })
+    expect(score).toBeCloseTo(3.6, 1)
+  })
+
+  it('falls back to review average when platform has no aggregate entry', () => {
+    const reviews = [
+      makeReview('GOOGLE', 4, false, 10),
+      makeReview('YELP', 2, false, 10),
+    ]
+    // Empty aggregates = same behaviour as no aggregates
+    const score = calculateOverallScore(reviews, {})
+    expect(score).toBeCloseTo(3.2, 1)
+  })
+})
+
 describe('calculateDeliveryScore', () => {
   it('returns null when no delivery reviews', () => {
     expect(calculateDeliveryScore([])).toBeNull()

@@ -14,19 +14,32 @@ interface ReviewForScore {
   reviewDate: Date
 }
 
-export function calculateOverallScore(reviews: ReviewForScore[]): number | null {
+export function calculateOverallScore(
+  reviews: ReviewForScore[],
+  platformAggregates?: Record<string, number>,
+): number | null {
   const dineIn = reviews.filter(r => !r.isDelivery && PLATFORM_WEIGHTS[r.platform])
-  if (dineIn.length === 0) return null
 
-  const presentPlatforms = Array.from(new Set(dineIn.map(r => r.platform)))
+  const reviewPlatforms = Array.from(new Set(dineIn.map(r => r.platform)))
+  const aggregatePlatforms = platformAggregates
+    ? Object.keys(platformAggregates).filter(p => PLATFORM_WEIGHTS[p])
+    : []
+  const presentPlatforms = Array.from(new Set([...reviewPlatforms, ...aggregatePlatforms]))
+
+  if (presentPlatforms.length === 0) return null
+
   const totalWeight = presentPlatforms.reduce((sum, p) => sum + (PLATFORM_WEIGHTS[p] ?? 0), 0)
 
   let weightedSum = 0
   for (const platform of presentPlatforms) {
-    const platformReviews = dineIn.filter(r => r.platform === platform)
-    const avg = platformReviews.reduce((s, r) => s + r.rating, 0) / platformReviews.length
-    const weight = (PLATFORM_WEIGHTS[platform] ?? 0) / totalWeight
-    weightedSum += avg * weight
+    let avg: number
+    if (platformAggregates?.[platform] !== undefined) {
+      avg = platformAggregates[platform]
+    } else {
+      const platformReviews = dineIn.filter(r => r.platform === platform)
+      avg = platformReviews.reduce((s, r) => s + r.rating, 0) / platformReviews.length
+    }
+    weightedSum += avg * ((PLATFORM_WEIGHTS[platform] ?? 0) / totalWeight)
   }
 
   return Math.round(weightedSum * 10) / 10
@@ -56,12 +69,27 @@ export function calculateTrend(reviews: ReviewForScore[]): { direction: 'up' | '
 
 export async function getScoreResult(restaurantId: string): Promise<ScoreResult> {
   const { db } = await import('@/lib/db')
-  const reviews = await db.review.findMany({
-    where: { restaurantId },
-    select: { platform: true, rating: true, isDelivery: true, reviewDate: true },
-  })
+  const [reviews, restaurant] = await Promise.all([
+    db.review.findMany({
+      where: { restaurantId },
+      select: { platform: true, rating: true, isDelivery: true, reviewDate: true },
+    }),
+    db.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { yelpRating: true },
+    }),
+  ])
+
+  const platformAggregates: Record<string, number> = {}
+  if (restaurant?.yelpRating != null) {
+    platformAggregates.YELP = restaurant.yelpRating
+  }
+
   return {
-    overall: calculateOverallScore(reviews),
+    overall: calculateOverallScore(
+      reviews,
+      Object.keys(platformAggregates).length > 0 ? platformAggregates : undefined,
+    ),
     trend: calculateTrend(reviews),
     deliveryScore: calculateDeliveryScore(reviews),
   }
