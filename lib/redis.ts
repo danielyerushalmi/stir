@@ -12,6 +12,6 @@ return count
 `
 
 export async function checkRateLimit(key: string, maxCount: number, windowSeconds: number): Promise<boolean> {
-  const count = await redis.eval<number>(RATE_LIMIT_SCRIPT, [key], [String(windowSeconds)])
+  const count = (await redis.eval(RATE_LIMIT_SCRIPT, [key], [String(windowSeconds)])) as number
   return count <= maxCount
 }
