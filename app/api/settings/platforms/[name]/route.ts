@@ -25,5 +25,17 @@ export async function DELETE(
     data: { isConnected: false, accessToken: null, refreshToken: null, tokenExpiresAt: null },
   })
 
+  if (params.name === 'YELP') {
+    await Promise.all([
+      db.restaurant.update({
+        where: { id: restaurant.id },
+        data: { yelpBusinessId: null, yelpRating: null, yelpReviewCount: null },
+      }),
+      db.review.deleteMany({
+        where: { restaurantId: restaurant.id, platform: 'YELP' },
+      }),
+    ])
+  }
+
   return NextResponse.json({ ok: true })
 }
