@@ -111,7 +111,7 @@ export async function fetchGoogleLocationNames(client: OAuth2Client): Promise<st
         if (loc.name) locationNames.push(loc.name)
       }
     } catch (err: unknown) {
-      const status = (err as any)?.response?.status
+      const status = (err as { response?: { status?: number } })?.response?.status
       if (status !== 403) throw err
       // 403 = this account has no accessible locations — skip
     }

@@ -64,14 +64,16 @@ export async function generateDraft(reviewId: string): Promise<string> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 25_000)
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 200,
-      system: systemPrompt,
-      // Change 4: wrap review text in XML tags to prevent prompt injection
-      messages: [{ role: 'user', content: `Write a response to this review (${review.rating} stars):\n<review>${review.reviewText}</review>` }],
-      signal: controller.signal,
-    })
+    const message = await anthropic.messages.create(
+      {
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 200,
+        system: systemPrompt,
+        // Change 4: wrap review text in XML tags to prevent prompt injection
+        messages: [{ role: 'user', content: `Write a response to this review (${review.rating} stars):\n<review>${review.reviewText}</review>` }],
+      },
+      { signal: controller.signal },
+    )
 
     // Change 7: narrow the unsafe cast with a type guard
     const block = message.content[0]
@@ -100,13 +102,15 @@ export async function generateInsights(restaurantId: string): Promise<void> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 25_000)
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1000,
-      system: buildInsightsSystemPrompt(hasYelp),
-      messages: [{ role: 'user', content: `Analyse these reviews from the last 60 days and identify the top 3–5 actionable insights:\n\n${reviewSummary}` }],
-      signal: controller.signal,
-    })
+    const message = await anthropic.messages.create(
+      {
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: buildInsightsSystemPrompt(hasYelp),
+        messages: [{ role: 'user', content: `Analyse these reviews from the last 60 days and identify the top 3–5 actionable insights:\n\n${reviewSummary}` }],
+      },
+      { signal: controller.signal },
+    )
 
     // Change 7: narrow the unsafe cast with a type guard
     const block = message.content[0]
