@@ -76,7 +76,7 @@ export function ReviewCard({ review, onDraftRequest }: ReviewCardProps) {
           ) : (
             <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.15 }}>
               <Button size="sm" onClick={() => onDraftRequest(review.id)}>
-                Draft reply →
+                {review.platform === 'YELP' ? 'Copy AI Response →' : 'Draft reply →'}
               </Button>
             </motion.div>
           )}
