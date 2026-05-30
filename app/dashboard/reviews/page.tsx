@@ -152,6 +152,7 @@ export default function ReviewsPage() {
                   <ResponseDraft
                     reviewId={review.id}
                     draft={activeDrafts[review.id]}
+                    platform={review.platform}
                     onApprove={approveDraft}
                     onDismiss={dismissDraft}
                   />
