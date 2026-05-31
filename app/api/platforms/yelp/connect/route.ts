@@ -6,6 +6,10 @@ import { getOrCreateDbUser } from '@/lib/user'
 import { getBusinessByName, getReviews, YelpApiError } from '@/lib/yelp'
 
 export async function POST(req: Request) {
+  if (!process.env.YELP_API_KEY) {
+    return NextResponse.json({ error: 'Yelp integration is not yet available' }, { status: 503 })
+  }
+
   const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

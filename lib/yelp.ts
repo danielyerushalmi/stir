@@ -8,6 +8,9 @@ export class YelpApiError extends Error {
 }
 
 async function yelpFetch<T>(path: string): Promise<T> {
+  if (!process.env.YELP_API_KEY) {
+    throw new YelpApiError(503, 'Yelp integration is not yet available')
+  }
   const res = await fetch(`${YELP_BASE}${path}`, {
     headers: { Authorization: `Bearer ${process.env.YELP_API_KEY}` },
   })
