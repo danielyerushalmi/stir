@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 type Tab = 'restaurant' | 'platforms' | 'voice' | 'account'
 
 interface SettingsData {
+  yelpAvailable: boolean
   restaurant: {
     id: string
     name: string
@@ -119,6 +120,7 @@ export default function SettingsPage() {
             <PlatformsTab
               platforms={data.platforms}
               onToast={showToast}
+              yelpAvailable={data.yelpAvailable}
               yelpData={
                 data.restaurant.yelpRating != null && data.restaurant.yelpReviewCount != null
                   ? { rating: data.restaurant.yelpRating, reviewCount: data.restaurant.yelpReviewCount }
