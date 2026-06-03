@@ -1,6 +1,35 @@
 'use client'
-import { useRef } from 'react'
-import { motion, useScroll, useTransform, useReducedMotion, MotionValue } from 'framer-motion'
+import { useRef, useEffect } from 'react'
+import { createTimeline, animate, stagger } from 'animejs'
+
+// Wisprflow-style voice waveform
+function VoiceWaveform() {
+  const barsRef = useRef<(HTMLDivElement | null)[]>([])
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const bars = barsRef.current.filter(Boolean) as HTMLDivElement[]
+    animate(bars, {
+      scaleY: [0.3, 1, 0.3],
+      duration: 900,
+      delay: stagger(120, { from: 'center' }),
+      ease: 'inOutSine',
+      loop: true,
+    })
+    return () => {}
+  }, [])
+  return (
+    <div className="flex items-center justify-center gap-1 h-8" aria-hidden>
+      {[0,1,2,3,4].map(i => (
+        <div
+          key={i}
+          ref={el => { barsRef.current[i] = el }}
+          className="w-1 rounded-full bg-orange"
+          style={{ height: '100%', transformOrigin: 'center', transform: 'scaleY(0.3)' }}
+        />
+      ))}
+    </div>
+  )
+}
 
 const STEPS = [
   {
@@ -10,17 +39,14 @@ const STEPS = [
     mockup: (
       <div className="space-y-2">
         <p className="text-xs text-text-lighter mb-3 uppercase tracking-wide">Connecting platforms</p>
-        {['Google', 'Yelp', 'TripAdvisor'].map((p, i) => (
-          <motion.div
+        {['Google', 'Yelp', 'TripAdvisor'].map((p) => (
+          <div
             key={p}
-            initial={{ opacity: 0, x: -12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.2 }}
             className="flex items-center justify-between rounded-lg border border-green/30 bg-green-light/40 px-4 py-2.5"
           >
             <span className="text-sm font-medium text-brown">{p}</span>
             <span className="text-xs text-green font-medium">✓ Connected</span>
-          </motion.div>
+          </div>
         ))}
       </div>
     ),
@@ -35,12 +61,9 @@ const STEPS = [
         <div className="rounded-lg bg-orange-light border border-orange/20 p-4">
           <p className="text-xs text-orange mb-2 font-medium">How would you reply to this 5★ review?</p>
           <p className="text-sm text-brown italic mb-3">&quot;Best meal we&apos;ve had in years. Pasta was incredible.&quot;</p>
-          <div className="rounded bg-white border border-border px-3 py-2 text-sm text-brown">
-            So glad you loved it! The pasta is made fresh every morning...
-            <motion.span
-              animate={{ opacity: [1, 0] }}
-              transition={{ duration: 0.6, repeat: Infinity }}
-            >|</motion.span>
+          <div className="rounded bg-white border border-border px-3 py-2">
+            <p className="text-sm text-brown mb-2">So glad you loved it! The pasta is made fresh every morning...</p>
+            <VoiceWaveform />
           </div>
         </div>
       </div>
@@ -66,168 +89,157 @@ const STEPS = [
   },
 ]
 
-function StepMockup({ activeStep, index }: { activeStep: MotionValue<number>; index: number }) {
-  const opacity = useTransform(activeStep, (v: number) =>
-    Math.max(0, 1 - Math.abs(v - index))
-  )
-  const y = useTransform(activeStep, (v: number) =>
-    (v - index) * 20
-  )
+function MobileVersion() {
   return (
-    <motion.div className="absolute inset-0 p-6" style={{ opacity, y }}>
-      {STEPS[index].mockup}
-    </motion.div>
-  )
-}
-
-function MockupContainer({
-  activeStep,
-  scrollYProgress,
-}: {
-  activeStep: MotionValue<number>
-  scrollYProgress: MotionValue<number>
-}) {
-  const barWidth = useTransform(
-    scrollYProgress,
-    [0, 0.4, 0.7, 1],
-    ['33%', '66%', '100%', '100%']
-  )
-
-  return (
-    <div className="rounded-2xl border border-border bg-cream shadow-lg relative overflow-hidden">
-      <div className="h-0.5 w-full bg-orange/10">
-        <motion.div className="h-full bg-orange" style={{ width: barWidth }} />
-      </div>
-      <div className="relative min-h-48">
-        {STEPS.map((_, i) => (
-          <StepMockup key={i} activeStep={activeStep} index={i} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function StepCard({
-  step,
-  index,
-  activeStep,
-}: {
-  step: typeof STEPS[0]
-  index: number
-  activeStep: MotionValue<number>
-}) {
-  const opacity = useTransform(activeStep, (v: number) =>
-    0.35 + Math.max(0, 1 - Math.abs(v - index)) * 0.65
-  )
-  const scale = useTransform(activeStep, (v: number) =>
-    0.97 + Math.max(0, 1 - Math.abs(v - index)) * 0.03
-  )
-  const circleActive = useTransform(activeStep, (v: number) =>
-    Math.max(0, 1 - Math.abs(v - index))
-  )
-  const circleInactive = useTransform(activeStep, (v: number) =>
-    1 - Math.max(0, 1 - Math.abs(v - index))
-  )
-
-  return (
-    <motion.div
-      className="flex gap-4"
-      style={{ opacity, scale }}
-      whileHover={{ x: 4, transition: { type: 'spring', stiffness: 300, damping: 22 } }}
-    >
-      <div className="w-10 h-10 shrink-0 relative">
-        <motion.div
-          className="absolute inset-0 rounded-full bg-orange-light flex items-center justify-center"
-          style={{ opacity: circleInactive }}
-        >
-          <span className="text-sm font-semibold text-orange">{step.num}</span>
-        </motion.div>
-        <motion.div
-          className="absolute inset-0 rounded-full bg-orange flex items-center justify-center"
-          style={{ opacity: circleActive }}
-        >
-          <span className="text-sm font-semibold text-white">{step.num}</span>
-        </motion.div>
-      </div>
-      <div>
-        <h3 className="font-semibold text-brown mb-1">{step.title}</h3>
-        <p className="text-text-muted text-base leading-relaxed">{step.body}</p>
-      </div>
-    </motion.div>
-  )
-}
-
-export function HowItWorksSection() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const prefersReduced = useReducedMotion()
-
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start start', 'end end'],
-  })
-
-  const activeStep = useTransform(scrollYProgress, [0, 0.4, 0.7, 1], [0, 1, 2, 2])
-
-  if (prefersReduced) {
-    return (
-      <section id="how-it-works" className="bg-white py-24 px-6">
-        <div className="mx-auto max-w-4xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-semibold text-brown mb-4">Up and running in 10 minutes</h2>
-            <p className="text-text-muted">No long setup. No technical knowledge required.</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {STEPS.map(step => (
-              <div key={step.num}>
-                <div className="w-10 h-10 rounded-full bg-orange-light flex items-center justify-center text-orange font-semibold text-sm mb-4">{step.num}</div>
-                <h3 className="font-semibold text-brown text-lg mb-2">{step.title}</h3>
-                <p className="text-text-muted text-base leading-relaxed">{step.body}</p>
-              </div>
-            ))}
-          </div>
+    <section id="how-it-works" className="bg-white py-24 px-6">
+      <div className="mx-auto max-w-4xl">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-semibold text-brown mb-4">Up and running in 10 minutes</h2>
+          <p className="text-text-muted">No long setup. No technical knowledge required.</p>
         </div>
-      </section>
-    )
-  }
+        <div className="grid md:grid-cols-3 gap-8">
+          {STEPS.map(step => (
+            <div key={step.num}>
+              <div className="w-10 h-10 rounded-full bg-orange-light flex items-center justify-center text-orange font-semibold text-sm mb-4">{step.num}</div>
+              <h3 className="font-semibold text-brown text-lg mb-2">{step.title}</h3>
+              <p className="text-text-muted text-base leading-relaxed">{step.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function DesktopVersion() {
+  const containerRef  = useRef<HTMLElement>(null)
+  const mockupRefs    = useRef<(HTMLDivElement | null)[]>([])
+  const stepRefs      = useRef<(HTMLDivElement | null)[]>([])
+  const numCircleRefs = useRef<(HTMLDivElement | null)[]>([])
+  const barRef        = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const container = containerRef.current
+    const mockups   = mockupRefs.current.filter(Boolean) as HTMLDivElement[]
+    const steps     = stepRefs.current.filter(Boolean) as HTMLDivElement[]
+    const circles   = numCircleRefs.current.filter(Boolean) as HTMLDivElement[]
+    const bar       = barRef.current
+    if (!container || mockups.length < 3) return
+    const el = container as HTMLElement
+
+    // Initial state
+    mockups.forEach((m, i) => { m.style.opacity = i === 0 ? '1' : '0' })
+    steps.forEach((s, i)   => { s.style.opacity = i === 0 ? '1' : '0.35' })
+    circles.forEach((c, i) => {
+      c.classList.toggle('bg-orange', i === 0)
+      c.classList.toggle('bg-orange-light', i !== 0)
+      const span = c.querySelector('span')
+      if (span) span.className = i === 0 ? 'text-sm font-semibold text-white' : 'text-sm font-semibold text-orange'
+    })
+
+    const tl = createTimeline({ autoplay: false, defaults: { ease: 'linear', duration: 80 } })
+
+    // Progress bar
+    if (bar) {
+      tl
+        .add(bar, { width: '33%', duration: 330 }, 0)
+        .add(bar, { width: '66%', duration: 300 }, 330)
+        .add(bar, { width: '100%', duration: 290 }, 630)
+    }
+
+    // Mockup crossfades at 33% and 66%
+    tl
+      .add(mockups[0],  { opacity: 0 }, 300)
+      .add(mockups[1],  { opacity: 1 }, 300)
+      .add(steps[0],    { opacity: 0.35 }, 300)
+      .add(steps[1],    { opacity: 1 }, 300)
+      .add(mockups[1],  { opacity: 0 }, 630)
+      .add(mockups[2],  { opacity: 1 }, 630)
+      .add(steps[1],    { opacity: 0.35 }, 630)
+      .add(steps[2],    { opacity: 1 }, 630)
+
+    let raf = 0
+    function update() {
+      const rect  = el.getBoundingClientRect()
+      const total = el.offsetHeight - window.innerHeight
+      const progress = Math.max(0, Math.min(1, -rect.top / total))
+      tl.seek(1000 * progress) // 0–1000ms range; all transitions sit within this window
+    }
+
+    function onScroll() {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(update)
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    update()
+
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      cancelAnimationFrame(raf)
+      tl.revert()
+    }
+  }, [])
 
   return (
-    <>
-      <div className="md:hidden">
-        <section id="how-it-works" className="bg-white py-24 px-6">
-          <div className="mx-auto max-w-4xl">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-semibold text-brown mb-4">Up and running in 10 minutes</h2>
-              <p className="text-text-muted">No long setup. No technical knowledge required.</p>
+    <section id="how-it-works" ref={containerRef} className="relative bg-white" style={{ height: '300vh' }}>
+      <div className="sticky top-0 h-screen flex items-center" style={{ overflow: 'clip' }}>
+        <div className="mx-auto max-w-5xl w-full px-6 grid grid-cols-2 gap-16 items-center">
+
+          {/* Left: mockup panel */}
+          <div className="rounded-2xl border border-border bg-cream shadow-lg overflow-hidden">
+            <div className="h-0.5 w-full bg-orange/10 relative">
+              <div ref={barRef} className="h-full bg-orange absolute left-0 top-0" style={{ width: '33%' }} />
             </div>
-            <div className="grid md:grid-cols-3 gap-8">
-              {STEPS.map(step => (
-                <div key={step.num}>
-                  <div className="w-10 h-10 rounded-full bg-orange-light flex items-center justify-center text-orange font-semibold text-sm mb-4">{step.num}</div>
-                  <h3 className="font-semibold text-brown text-lg mb-2">{step.title}</h3>
-                  <p className="text-text-muted text-base leading-relaxed">{step.body}</p>
+            <div className="relative min-h-48">
+              {STEPS.map((step, i) => (
+                <div
+                  key={step.num}
+                  ref={el => { mockupRefs.current[i] = el }}
+                  className="absolute inset-0 p-6"
+                  style={{ opacity: 0 }}
+                >
+                  {step.mockup}
                 </div>
               ))}
             </div>
           </div>
-        </section>
-      </div>
 
-      <div className="hidden md:block">
-        <section id="how-it-works" ref={containerRef} className="relative bg-white" style={{ height: '300vh' }}>
-          <div className="sticky top-0 h-screen flex items-center overflow-hidden">
-            <div className="mx-auto max-w-5xl w-full px-6 grid grid-cols-2 gap-16 items-center">
-              <MockupContainer activeStep={activeStep} scrollYProgress={scrollYProgress} />
-
-              <div className="flex flex-col gap-8">
-                <h2 className="text-3xl font-semibold text-brown">Up and running in 10 minutes</h2>
-                {STEPS.map((step, i) => (
-                  <StepCard key={step.num} step={step} index={i} activeStep={activeStep} />
-                ))}
+          {/* Right: step cards */}
+          <div className="flex flex-col gap-8">
+            <h2 className="text-3xl font-semibold text-brown">Up and running in 10 minutes</h2>
+            {STEPS.map((step, i) => (
+              <div
+                key={step.num}
+                ref={el => { stepRefs.current[i] = el }}
+                className="flex gap-4"
+                style={{ opacity: 0.35 }}
+              >
+                <div
+                  ref={el => { numCircleRefs.current[i] = el }}
+                  className="w-10 h-10 shrink-0 rounded-full bg-orange-light flex items-center justify-center"
+                >
+                  <span className="text-sm font-semibold text-orange">{step.num}</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-brown mb-1">{step.title}</h3>
+                  <p className="text-text-muted text-base leading-relaxed">{step.body}</p>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-        </section>
+
+        </div>
       </div>
+    </section>
+  )
+}
+
+export function HowItWorksSection() {
+  return (
+    <>
+      <div className="md:hidden"><MobileVersion /></div>
+      <div className="hidden md:block"><DesktopVersion /></div>
     </>
   )
 }
