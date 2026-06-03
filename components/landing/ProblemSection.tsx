@@ -1,18 +1,31 @@
 'use client'
 import { useRef, useEffect } from 'react'
-import { motion, useScroll, useTransform, useReducedMotion, MotionValue, animate, useInView, useMotionValue } from 'framer-motion'
+import { createTimeline, animate } from 'animejs'
 
 function CountUp({ to }: { to: number }) {
   const ref = useRef<HTMLSpanElement>(null)
-  const isInView = useInView(ref, { once: true })
-  const count = useMotionValue(0)
-  const rounded = useTransform(count, Math.round)
-
   useEffect(() => {
-    if (isInView) animate(count, to, { duration: 1.5, ease: [0.16, 1, 0.3, 1] })
-  }, [isInView, count, to])
-
-  return <motion.span ref={ref}>{rounded}</motion.span>
+    const el = ref.current
+    if (!el) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      el.textContent = String(to)
+      return
+    }
+    const io = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      io.disconnect()
+      const obj = { value: 0 }
+      animate(obj, {
+        value: to,
+        duration: 1500,
+        ease: 'out(3)',
+        onUpdate: () => { el.textContent = String(Math.round(obj.value)) },
+      })
+    }, { threshold: 0.5 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [to])
+  return <span ref={ref}>0</span>
 }
 
 const PAIN_POINTS = [
@@ -60,142 +73,146 @@ const PAIN_POINTS = [
   },
 ]
 
-function StepDot({ index, activeStep }: { index: number; activeStep: MotionValue<number> }) {
-  const scale = useTransform(activeStep, (v: number) =>
-    1 + Math.max(0, 1 - Math.abs(v - index)) * 0.6
-  )
-  const opacity = useTransform(activeStep, (v: number) =>
-    0.2 + Math.max(0, 1 - Math.abs(v - index)) * 0.8
-  )
+// Mobile: flat list
+function MobileVersion() {
   return (
-    <motion.div
-      className="w-2 h-2 rounded-full bg-orange"
-      style={{ scale, opacity }}
-    />
-  )
-}
-
-function StepDotLabel({ label, index, activeStep }: { label: string; index: number; activeStep: MotionValue<number> }) {
-  const opacity = useTransform(activeStep, (v: number) =>
-    Math.max(0, 1 - Math.abs(v - index))
-  )
-  return (
-    <motion.span
-      className="absolute inset-0 text-sm font-medium text-orange whitespace-nowrap"
-      style={{ opacity }}
-    >
-      {label}
-    </motion.span>
-  )
-}
-
-function StepIndicator({ activeStep }: { activeStep: MotionValue<number> }) {
-  return (
-    <div className="mt-10 flex items-center gap-3">
-      <div className="flex items-center gap-2.5">
-        {PAIN_POINTS.map((_, i) => (
-          <StepDot key={i} index={i} activeStep={activeStep} />
-        ))}
-      </div>
-      <div className="relative h-5 min-w-[160px]">
-        {PAIN_POINTS.map((p, i) => (
-          <StepDotLabel key={p.id} label={p.label} index={i} activeStep={activeStep} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-export function ProblemSection() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const prefersReduced = useReducedMotion()
-
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start start', 'end end'],
-  })
-
-  const activeStepRaw = useTransform(scrollYProgress, [0, 0.33, 0.66, 1], [0, 1, 2, 2])
-
-  if (prefersReduced) {
-    return (
-      <section className="bg-cream-dark py-24 px-6">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="text-3xl font-semibold text-brown mb-12 text-center">
-            Your reviews are talking.<br />Are you listening?
-          </h2>
-          <div className="flex flex-col gap-6">
-            {PAIN_POINTS.map(p => <div key={p.id}>{p.content}</div>)}
-          </div>
+    <section className="bg-cream-dark py-24 px-6">
+      <div className="mx-auto max-w-4xl">
+        <h2 className="text-3xl font-semibold text-brown mb-12 text-center">
+          Your reviews are talking.<br />Are you listening?
+        </h2>
+        <div className="flex flex-col gap-6">
+          {PAIN_POINTS.map(p => <div key={p.id}>{p.content}</div>)}
         </div>
-      </section>
-    )
-  }
+      </div>
+    </section>
+  )
+}
+
+// Desktop: sticky scroll
+function DesktopVersion() {
+  const containerRef = useRef<HTMLElement>(null)
+  const panelRefs   = useRef<(HTMLDivElement | null)[]>([])
+  const dotRefs     = useRef<(HTMLDivElement | null)[]>([])
+  const labelRefs   = useRef<(HTMLSpanElement | null)[]>([])
+
+  useEffect(() => {
+    const container = containerRef.current
+    const panels    = panelRefs.current.filter(Boolean) as HTMLDivElement[]
+    const dots      = dotRefs.current.filter(Boolean) as HTMLDivElement[]
+    if (!container || panels.length < 3 || dots.length < 3) return
+    const el = container as HTMLElement
+
+    // Set initial state: only panel 0 visible
+    panels.forEach((p, i) => { p.style.opacity = i === 0 ? '1' : '0' })
+    dots.forEach((d, i)   => { d.style.opacity = i === 0 ? '1' : '0.2'; d.style.scale = i === 0 ? '1.6' : '1' })
+
+    // Timeline: 0–1000ms maps to 0%–100% scroll progress
+    const tl = createTimeline({ autoplay: false, defaults: { ease: 'linear', duration: 80 } })
+
+    // At 33% progress: crossfade to panel 1
+    tl
+      .add(panels[0],  { opacity: 0 }, 300)
+      .add(panels[1],  { opacity: 1 }, 300)
+      .add(dots[0],    { opacity: 0.2, scale: 1 }, 300)
+      .add(dots[1],    { opacity: 1,   scale: 1.6 }, 300)
+      // At 66% progress: crossfade to panel 2
+      .add(panels[1],  { opacity: 0 }, 630)
+      .add(panels[2],  { opacity: 1 }, 630)
+      .add(dots[1],    { opacity: 0.2, scale: 1 }, 630)
+      .add(dots[2],    { opacity: 1,   scale: 1.6 }, 630)
+
+    let raf = 0
+    function update() {
+      const rect  = el.getBoundingClientRect()
+      const total = el.offsetHeight - window.innerHeight
+      const scrolled = -rect.top
+      const progress = Math.max(0, Math.min(1, scrolled / total))
+      // seek within 0–1000ms; all transitions are placed within this range
+      tl.seek(1000 * progress)
+    }
+
+    function onScroll() {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(update)
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    update()
+
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      cancelAnimationFrame(raf)
+      tl.revert()
+    }
+  }, [])
 
   return (
-    <>
-      <div className="md:hidden">
-        <section className="bg-cream-dark py-24 px-6">
-          <div className="mx-auto max-w-4xl">
-            <h2 className="text-3xl font-semibold text-brown mb-12 text-center">
-              Your reviews are talking.<br />Are you listening?
-            </h2>
-            <div className="flex flex-col gap-6">
-              {PAIN_POINTS.map(p => <div key={p.id}>{p.content}</div>)}
-            </div>
-          </div>
-        </section>
-      </div>
+    <section ref={containerRef} className="relative bg-cream-dark" style={{ height: '300vh' }}>
+      <div className="sticky top-0 h-screen flex items-center" style={{ overflow: 'clip' }}>
+        <div className="mx-auto max-w-5xl w-full px-6 grid grid-cols-2 gap-16 items-center">
 
-      <div className="hidden md:block">
-        <section ref={containerRef} className="relative bg-cream-dark" style={{ height: '300vh' }}>
-          <div className="sticky top-0 h-screen flex items-center overflow-hidden">
-            <div className="mx-auto max-w-5xl w-full px-6 grid grid-cols-2 gap-16 items-center">
-              <div>
-                <h2 className="text-3xl md:text-4xl font-semibold text-brown leading-snug">
-                  Your reviews are talking.<br />
-                  <span className="text-orange">Are you listening?</span>
-                </h2>
-                <p className="mt-4 text-text-muted text-base leading-relaxed">
-                  Every unanswered review is a missed chance to win back a customer — or convert a reader into a guest.
-                </p>
-                <StepIndicator activeStep={activeStepRaw} />
+          {/* Left: headline + dot indicators */}
+          <div>
+            <h2 className="text-3xl md:text-4xl font-semibold text-brown leading-snug">
+              Your reviews are talking.<br />
+              <span className="text-orange">Are you listening?</span>
+            </h2>
+            <p className="mt-4 text-text-muted text-base leading-relaxed">
+              Every unanswered review is a missed chance to win back a customer — or convert a reader into a guest.
+            </p>
+
+            {/* Dot indicators */}
+            <div className="mt-10 flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
+                {PAIN_POINTS.map((_, i) => (
+                  <div
+                    key={i}
+                    ref={el => { dotRefs.current[i] = el }}
+                    className="w-2 h-2 rounded-full bg-orange"
+                    style={{ opacity: 0.2 }}
+                  />
+                ))}
               </div>
-              <div className="relative h-64">
-                {PAIN_POINTS.map((point, i) => (
-                  <ActivePainPoint key={point.id} point={point} index={i} activeStepRaw={activeStepRaw} />
+              <div className="relative h-5 min-w-[160px]">
+                {PAIN_POINTS.map((p, i) => (
+                  <span
+                    key={p.id}
+                    ref={el => { labelRefs.current[i] = el }}
+                    className="absolute inset-0 text-sm font-medium text-orange whitespace-nowrap"
+                  >
+                    {p.label}
+                  </span>
                 ))}
               </div>
             </div>
           </div>
-        </section>
+
+          {/* Right: stacked panels */}
+          <div className="relative h-64">
+            {PAIN_POINTS.map((point, i) => (
+              <div
+                key={point.id}
+                ref={el => { panelRefs.current[i] = el }}
+                className="absolute inset-0"
+                style={{ opacity: 0 }}
+              >
+                {point.content}
+              </div>
+            ))}
+          </div>
+
+        </div>
       </div>
-    </>
+    </section>
   )
 }
 
-function ActivePainPoint({
-  point,
-  index,
-  activeStepRaw,
-}: {
-  point: { id: string; content: React.ReactNode }
-  index: number
-  activeStepRaw: MotionValue<number>
-}) {
-  const opacity = useTransform(activeStepRaw, (v: number) =>
-    Math.max(0, 1 - Math.abs(v - index))
-  )
-  const y = useTransform(activeStepRaw, (v: number) =>
-    (v - index) * 24
-  )
-  const scale = useTransform(activeStepRaw, (v: number) =>
-    0.94 + Math.max(0, 1 - Math.abs(v - index)) * 0.06
-  )
-
+export function ProblemSection() {
   return (
-    <motion.div className="absolute inset-0" style={{ opacity, y, scale }}>
-      {point.content}
-    </motion.div>
+    <>
+      <div className="md:hidden"><MobileVersion /></div>
+      <div className="hidden md:block"><DesktopVersion /></div>
+    </>
   )
 }
