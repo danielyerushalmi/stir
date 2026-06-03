@@ -1,68 +1,89 @@
 'use client'
-import { motion, useReducedMotion } from 'framer-motion'
+import { useEffect, useRef } from 'react'
+import { createTimeline, stagger } from 'animejs'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
 
 const WORDS = ['Every', 'review', 'deserves', 'a', 'reply.']
 
 export function HeroSection() {
-  const prefersReduced = useReducedMotion()
+  const badgeRef   = useRef<HTMLDivElement>(null)
+  const wordsRef   = useRef<(HTMLSpanElement | null)[]>([])
+  const subRef     = useRef<HTMLParagraphElement>(null)
+  const ctaRef     = useRef<HTMLDivElement>(null)
+  const trustRef   = useRef<HTMLParagraphElement>(null)
+  const imageRef   = useRef<HTMLDivElement>(null)
+  const card1Ref   = useRef<HTMLDivElement>(null)
+  const card2Ref   = useRef<HTMLDivElement>(null)
 
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: prefersReduced ? 0 : 0.08 } },
-  }
-  const word = {
-    hidden: { opacity: 0, y: prefersReduced ? 0 : 20 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-  }
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const words = wordsRef.current.filter(Boolean) as HTMLSpanElement[]
+    const badge = badgeRef.current
+    const sub   = subRef.current
+    const cta   = ctaRef.current
+    const trust = trustRef.current
+    const image = imageRef.current
+    const card1 = card1Ref.current
+    const card2 = card2Ref.current
+
+    if (!badge || !sub || !cta || !trust || !image) return
+
+    const tl = createTimeline({ defaults: { ease: 'outExpo' } })
+    tl
+      .add(badge, { opacity: [0, 1], y: [-8, 0], duration: 500 })
+      .add(words, { opacity: [0, 1], y: [20, 0], duration: 400, delay: stagger(80) }, '-=300')
+      .add(sub,   { opacity: [0, 1], duration: 500 }, '-=300')
+      .add(cta,   { opacity: [0, 1], y: [8, 0], duration: 400 }, '-=200')
+      .add(trust, { opacity: [0, 1], duration: 400 }, '-=200')
+      .add(image, { opacity: [0, 1], y: [20, 0], duration: 700, ease: 'out(3)' }, 300)
+
+    if (card1) tl.add(card1, { opacity: [0, 1], y: [10, 0], duration: 500 }, '-=200')
+    if (card2) tl.add(card2, { opacity: [0, 1], y: [-10, 0], duration: 500 }, '-=400')
+
+    return () => { tl.revert() }
+  }, [])
 
   return (
     <section className="grain relative bg-cream overflow-hidden pt-20 pb-16 px-6">
       <div className="mx-auto max-w-6xl">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
 
-          {/* Left: text content */}
           <div className="relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              whileHover={{ scale: 1.03, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
+            <div
+              ref={badgeRef}
+              style={{ opacity: 0 }}
               className="mb-6 inline-flex items-center rounded-full bg-orange-light px-4 py-1.5 text-xs font-medium text-orange cursor-default"
             >
               AI-powered reputation management for restaurants
-            </motion.div>
+            </div>
 
-            <motion.h1
+            <h1
               className="mb-6 font-semibold text-brown leading-tight tracking-tight"
               style={{ fontSize: 'clamp(2.75rem, 5vw + 0.5rem, 4.5rem)' }}
-              variants={container}
-              initial="hidden"
-              animate="show"
             >
               {WORDS.map((w, i) => (
-                <motion.span key={i} variants={word} className="inline-block mr-[0.25em]">
+                <span
+                  key={i}
+                  ref={el => { wordsRef.current[i] = el }}
+                  style={{ opacity: 0, display: 'inline-block', marginRight: '0.25em' }}
+                >
                   {w === 'reply.' ? <span className="text-orange">reply.</span> : w}
-                </motion.span>
+                </span>
               ))}
-            </motion.h1>
+            </h1>
 
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
+            <p
+              ref={subRef}
+              style={{ opacity: 0 }}
               className="mb-8 text-lg text-text-muted max-w-xl leading-relaxed"
             >
-              Stir aggregates your reviews across Google, Yelp, TripAdvisor and delivery platforms, then drafts responses in your voice so every customer feels heard, without eating your day.
-            </motion.p>
+              Stir aggregates your reviews across Google, Yelp, TripAdvisor and delivery platforms, then drafts responses in your voice so every customer feels heard — without eating your day.
+            </p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8, duration: 0.4 }}
-              className="flex items-center gap-4 flex-wrap mb-10"
-            >
+            <div ref={ctaRef} style={{ opacity: 0 }} className="flex items-center gap-4 flex-wrap mb-10">
               <motion.div
                 className="inline-block"
                 whileHover={{ y: -2, transition: { type: 'spring', stiffness: 400, damping: 25 } }}
@@ -78,28 +99,19 @@ export function HeroSection() {
               <a href="#how-it-works" className="text-sm font-medium text-text-muted hover:text-brown transition-colors">
                 See how it works ↓
               </a>
-            </motion.div>
+            </div>
 
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1, duration: 0.4 }}
-              className="text-xs text-text-lighter"
-            >
+            <p ref={trustRef} style={{ opacity: 0 }} className="text-xs text-text-lighter">
               Trusted by 500+ independent restaurants
-            </motion.p>
+            </p>
           </div>
 
-          {/* Right: photo + floating review cards */}
           <div className="relative">
-            {/* Outer wrapper: provides shadow + relative anchor for floating cards */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            <div
+              ref={imageRef}
+              style={{ opacity: 0 }}
               className="relative aspect-[4/3] lg:aspect-[4/5] rounded-2xl shadow-2xl"
             >
-              {/* Inner clip: rounds image corners without clipping shadow or cards */}
               <div className="absolute inset-0 rounded-2xl overflow-hidden">
                 <Image
                   src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=80"
@@ -112,11 +124,9 @@ export function HeroSection() {
                 <div className="absolute inset-0 bg-gradient-to-t from-brown/30 to-transparent pointer-events-none" />
               </div>
 
-              {/* 5★ review card — bottom left */}
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.1, duration: 0.5, ease: 'easeOut' }}
+                ref={card1Ref}
+                style={{ opacity: 0 }}
                 whileHover={{ scale: 1.04, y: -4, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
                 className="absolute bottom-5 left-5 z-10 w-52 rounded-xl border border-green/20 bg-white p-3.5 shadow-xl hidden lg:block cursor-default"
               >
@@ -127,11 +137,9 @@ export function HeroSection() {
                 <p className="text-xs text-brown line-clamp-2 leading-relaxed">Best Italian in town. The carbonara is life-changing.</p>
               </motion.div>
 
-              {/* 1★ no reply card — top right */}
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.3, duration: 0.5, ease: 'easeOut' }}
+                ref={card2Ref}
+                style={{ opacity: 0 }}
                 whileHover={{ scale: 1.04, y: -4, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
                 className="absolute top-5 right-5 z-10 w-52 rounded-xl border border-red-light bg-red-light p-3.5 shadow-xl hidden lg:block cursor-default"
               >
@@ -141,7 +149,7 @@ export function HeroSection() {
                 </div>
                 <p className="text-xs text-brown line-clamp-2 leading-relaxed">Service was slow. The risotto arrived cold. Disappointing.</p>
               </motion.div>
-            </motion.div>
+            </div>
           </div>
 
         </div>
