@@ -1,27 +1,57 @@
 'use client'
-import { motion } from 'framer-motion'
 
-const PLATFORMS = ['Google', 'Yelp', 'TripAdvisor', 'DoorDash', 'Uber Eats', 'Grubhub']
+const PLATFORMS: { name: string; live: boolean }[] = [
+  { name: 'Google',      live: true },
+  { name: 'Yelp',        live: true },
+  { name: 'TripAdvisor', live: false },
+  { name: 'DoorDash',    live: false },
+  { name: 'Uber Eats',   live: false },
+  { name: 'Grubhub',     live: false },
+]
+
+const DOT = <span className="mx-8 text-border select-none" aria-hidden>·</span>
+
+function PlatformItem({ name, live }: { name: string; live: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-2 shrink-0">
+      <span className={live ? 'text-sm font-semibold text-text-muted' : 'text-sm font-semibold text-text-lighter/50'}>
+        {name}
+      </span>
+      {!live && (
+        <span className="rounded-full bg-border px-2 py-0.5 text-[10px] font-medium text-text-lighter">
+          Soon
+        </span>
+      )}
+    </span>
+  )
+}
 
 export function PlatformStrip() {
+  const items = PLATFORMS.flatMap((p, i) => [
+    <PlatformItem key={`a-${i}`} {...p} />,
+    <span key={`da-${i}`} aria-hidden>{DOT}</span>,
+  ])
+
+  // Duplicate for seamless loop
+  const band = [...items, ...items.map((el) =>
+    el.key ? { ...el, key: el.key.replace('a-', 'b-').replace('da-', 'db-') } : el
+  )]
+
   return (
-    <section className="border-y border-border bg-white py-12 px-6">
-      <div className="mx-auto max-w-4xl text-center">
-        <p className="mb-8 text-sm font-medium text-text-lighter uppercase tracking-widest">All your reviews, one place</p>
-        <div className="flex flex-wrap items-center justify-center gap-10">
-          {PLATFORMS.map((name, i) => (
-            <motion.div
-              key={name}
-              initial={{ opacity: 0, y: 8 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.07, duration: 0.35 }}
-              className="text-base font-semibold text-text-muted hover:text-brown transition-colors cursor-default"
-            >
-              {name}
-            </motion.div>
-          ))}
-        </div>
+    <section className="border-y border-border bg-white py-10 overflow-hidden" aria-label="Supported platforms">
+      <p className="mb-6 text-center text-xs font-medium text-text-lighter uppercase tracking-widest">
+        All your reviews, one place
+      </p>
+      <div
+        className="flex whitespace-nowrap"
+        style={{
+          animation: 'ticker 28s linear infinite',
+          willChange: 'transform',
+        }}
+        onMouseEnter={e => ((e.currentTarget as HTMLElement).style.animationPlayState = 'paused')}
+        onMouseLeave={e => ((e.currentTarget as HTMLElement).style.animationPlayState = 'running')}
+      >
+        {band}
       </div>
     </section>
   )
