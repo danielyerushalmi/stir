@@ -43,3 +43,10 @@ next-env.d.ts
 .superpowers/
 
 /app/generated/prisma
+
+# swarm / ruflo tool artifacts
+.agents/
+.claude-flow/
+.swarm/
+ruvector.db
+skills-lock.json
