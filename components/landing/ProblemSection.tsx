@@ -103,9 +103,12 @@ function DesktopVersion() {
     if (!container || panels.length < 3 || dots.length < 3) return
     const el = container as HTMLElement
 
+    const labels = labelRefs.current.filter(Boolean) as HTMLSpanElement[]
+
     // Set initial state: only panel 0 visible
     panels.forEach((p, i) => { p.style.opacity = i === 0 ? '1' : '0' })
     dots.forEach((d, i)   => { d.style.opacity = i === 0 ? '1' : '0.2'; d.style.scale = i === 0 ? '1.6' : '1' })
+    labels.forEach((l, i) => { l.style.opacity = i === 0 ? '1' : '0' })
 
     // Timeline: 0–1000ms maps to 0%–100% scroll progress
     const tl = createTimeline({ autoplay: false, defaults: { ease: 'linear', duration: 80 } })
@@ -116,11 +119,15 @@ function DesktopVersion() {
       .add(panels[1],  { opacity: 1 }, 300)
       .add(dots[0],    { opacity: 0.2, scale: 1 }, 300)
       .add(dots[1],    { opacity: 1,   scale: 1.6 }, 300)
+      .add(labels[0],  { opacity: 0 }, 300)
+      .add(labels[1],  { opacity: 1 }, 300)
       // At 66% progress: crossfade to panel 2
       .add(panels[1],  { opacity: 0 }, 630)
       .add(panels[2],  { opacity: 1 }, 630)
       .add(dots[1],    { opacity: 0.2, scale: 1 }, 630)
       .add(dots[2],    { opacity: 1,   scale: 1.6 }, 630)
+      .add(labels[1],  { opacity: 0 }, 630)
+      .add(labels[2],  { opacity: 1 }, 630)
 
     let raf = 0
     function update() {

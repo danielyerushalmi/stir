@@ -191,7 +191,7 @@ function DesktopVersion() {
             <div className="h-0.5 w-full bg-orange/10 relative">
               <div ref={barRef} className="h-full bg-orange absolute left-0 top-0" style={{ width: '33%' }} />
             </div>
-            <div className="relative min-h-48">
+            <div className="relative min-h-72">
               {STEPS.map((step, i) => (
                 <div
                   key={step.num}
