@@ -91,6 +91,7 @@ export default function ConnectStep() {
                         <input
                           className="rounded border border-border px-3 py-1.5 text-xs w-44"
                           placeholder="Paste listing URL"
+                          aria-label="Listing URL"
                           value={inputs[p.id] || ''}
                           onChange={e => setInputs(prev => ({ ...prev, [p.id]: e.target.value }))}
                         />

@@ -1,21 +1,19 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
-import { getOrCreateDbUser } from '@/lib/user'
+import { requireRestaurant } from '@/lib/user'
 
 export async function GET(req: Request) {
-  const { userId } = auth()
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const user = await getOrCreateDbUser()
-  if (!user) return NextResponse.json({ reviews: [], total: 0, pages: 0 })
-
-  const restaurant = await db.restaurant.findFirst({ where: { userId: user.id } })
-  if (!restaurant) return NextResponse.json({ reviews: [], total: 0, pages: 0 })
+  const ctx = await requireRestaurant()
+  if (!ctx.ok) return NextResponse.json({ reviews: [], total: 0, pages: 0 })
+  const { restaurant } = ctx
 
   const url = new URL(req.url)
   const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1') || 1)
   const platform = url.searchParams.get('platform') || undefined
+  const ALLOWED_PLATFORMS = ['GOOGLE', 'YELP', 'TRIPADVISOR', 'FACEBOOK', 'DOORDASH', 'UBEREATS', 'GRUBHUB']
+  if (platform && !ALLOWED_PLATFORMS.includes(platform)) {
+    return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
+  }
   const parsedRating = url.searchParams.get('rating') ? parseInt(url.searchParams.get('rating')!) : undefined
   const rating = parsedRating !== undefined && !Number.isNaN(parsedRating) && parsedRating >= 1 && parsedRating <= 5
     ? parsedRating

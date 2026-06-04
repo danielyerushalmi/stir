@@ -67,8 +67,8 @@ export default async function DashboardPage({
         <ScoreCard label="Awaiting Reply" score={awaitingReply} integer subtitle={awaitingReply === 1 ? '1 unanswered review' : `${awaitingReply} unanswered reviews`} />
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 rounded-xl border border-border bg-white p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 rounded-xl border border-border bg-white p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-charcoal">Recent reviews</h2>
             <Link href="/dashboard/reviews" className="text-xs text-orange hover:underline">View all →</Link>

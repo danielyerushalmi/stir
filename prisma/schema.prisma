@@ -79,6 +79,7 @@ model Review {
 
   @@unique([platform, externalId])
   @@index([restaurantId, reviewDate(sort: Desc)])
+  @@index([restaurantId, platform])
 }
 
 model ReviewResponse {

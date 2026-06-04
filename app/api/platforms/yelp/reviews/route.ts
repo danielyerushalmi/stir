@@ -1,24 +1,21 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
-import { getOrCreateDbUser } from '@/lib/user'
+import { requireRestaurant } from '@/lib/user'
 import { getReviews, YelpApiError } from '@/lib/yelp'
 
 export async function GET() {
-  const { userId } = auth()
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireRestaurant()
+  if (!ctx.ok) return ctx.response
+  const { restaurant } = ctx
 
-  const user = await getOrCreateDbUser()
-  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
-
-  const restaurant = await db.restaurant.findFirst({ where: { userId: user.id } })
-  if (!restaurant?.yelpBusinessId) {
+  const fullRestaurant = await db.restaurant.findUnique({ where: { id: restaurant.id }, select: { yelpBusinessId: true } })
+  if (!fullRestaurant?.yelpBusinessId) {
     return NextResponse.json({ error: 'Yelp not connected' }, { status: 400 })
   }
 
   try {
-    const yelpReviews = await getReviews(restaurant.yelpBusinessId)
+    const yelpReviews = await getReviews(fullRestaurant.yelpBusinessId)
     const reviews = yelpReviews.map((r, i) => ({
       id: `yelp_live_${i}`,
       platform: 'YELP',
