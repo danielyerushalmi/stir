@@ -194,6 +194,7 @@ export function PlatformsTab({ platforms: initial, onToast, yelpAvailable, yelpD
                 <input
                   type="text"
                   placeholder="Restaurant name"
+                  aria-label="Restaurant name"
                   value={yelpForm.businessName}
                   onChange={e => setYelpForm(f => ({ ...f, businessName: e.target.value }))}
                   className="flex-1 rounded-lg border border-border px-3 py-1.5 text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-orange/20"
@@ -201,6 +202,7 @@ export function PlatformsTab({ platforms: initial, onToast, yelpAvailable, yelpD
                 <input
                   type="text"
                   placeholder="City"
+                  aria-label="City"
                   value={yelpForm.city}
                   onChange={e => setYelpForm(f => ({ ...f, city: e.target.value }))}
                   className="w-32 rounded-lg border border-border px-3 py-1.5 text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-orange/20"

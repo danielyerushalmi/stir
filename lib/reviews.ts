@@ -1,5 +1,3 @@
-import { db } from './db'
-
 export function classifyReviewType(rating: number, text: string): string {
   const lower = text.toLowerCase()
   if (rating === 5) return 'positive_5star'
@@ -8,18 +6,4 @@ export function classifyReviewType(rating: number, text: string): string {
   if (lower.includes('cold') || lower.includes('undercooked') || lower.includes('bland') || lower.includes('tasteless') || lower.includes('food')) return 'food_complaint'
   if (lower.includes('server') || lower.includes('staff') || lower.includes('rude') || lower.includes('dismissive') || lower.includes('ignored') || lower.includes('unfriendly') || lower.includes('service')) return 'service_complaint'
   return 'mixed'
-}
-
-export async function getReviewsForRestaurant(restaurantId: string, page = 1, pageSize = 10) {
-  const [reviews, total] = await Promise.all([
-    db.review.findMany({
-      where: { restaurantId },
-      include: { response: true },
-      orderBy: { reviewDate: 'desc' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-    db.review.count({ where: { restaurantId } }),
-  ])
-  return { reviews, total, pages: Math.ceil(total / pageSize) }
 }

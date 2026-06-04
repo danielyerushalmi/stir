@@ -8,6 +8,7 @@ import { PlatformsTab } from './_components/PlatformsTab'
 import { VoiceTab } from './_components/VoiceTab'
 import { AccountTab } from './_components/AccountTab'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/Button'
 
 type Tab = 'restaurant' | 'platforms' | 'voice' | 'account'
 
@@ -109,7 +110,7 @@ export default function SettingsPage() {
       ) : error || !data ? (
         <div>
           <p className="text-sm text-red-dark">Failed to load settings. Please refresh.</p>
-          <button onClick={loadSettings} className="mt-2 text-sm text-orange hover:underline">Try again</button>
+          <Button variant="ghost" size="sm" onClick={loadSettings} className="mt-2">Try again</Button>
         </div>
       ) : (
         <>

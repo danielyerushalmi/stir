@@ -1,4 +1,5 @@
 import type { ScoreResult } from '@/types'
+import { db } from '@/lib/db'
 
 const PLATFORM_WEIGHTS: Record<string, number> = {
   GOOGLE: 40,
@@ -68,7 +69,6 @@ export function calculateTrend(reviews: ReviewForScore[]): { direction: 'up' | '
 }
 
 export async function getScoreResult(restaurantId: string): Promise<ScoreResult> {
-  const { db } = await import('@/lib/db')
   const [reviews, restaurant] = await Promise.all([
     db.review.findMany({
       where: { restaurantId },

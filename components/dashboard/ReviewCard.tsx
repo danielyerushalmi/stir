@@ -61,9 +61,14 @@ export function ReviewCard({ review, onDraftRequest }: ReviewCardProps) {
           <p className="text-xs text-text-lighter mt-0.5">
             {new Date(review.reviewDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </p>
-          <p className={cn('mt-2 text-sm text-text-muted', !expanded && 'line-clamp-2')}>{review.reviewText}</p>
+          <p id={`review-text-${review.id}`} className={cn('mt-2 text-sm text-text-muted', !expanded && 'line-clamp-2')}>{review.reviewText}</p>
           {review.reviewText.length > 120 && (
-            <button className="text-xs text-orange mt-1 hover:text-orange-dark" onClick={() => setExpanded(e => !e)}>
+            <button
+              className="text-xs text-orange mt-1 hover:text-orange-dark"
+              onClick={() => setExpanded(e => !e)}
+              aria-expanded={expanded}
+              aria-controls={`review-text-${review.id}`}
+            >
               {expanded ? 'Show less' : 'Read more'}
             </button>
           )}

@@ -1,23 +1,21 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
-import { getOrCreateDbUser } from '@/lib/user'
+import { requireRestaurant } from '@/lib/user'
 import { getBusinessByName, getReviews, YelpApiError } from '@/lib/yelp'
+import { checkRateLimit } from '@/lib/redis'
 
 export async function POST(req: Request) {
   if (!process.env.YELP_API_KEY) {
     return NextResponse.json({ error: 'Yelp integration is not yet available' }, { status: 503 })
   }
 
-  const { userId } = auth()
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireRestaurant()
+  if (!ctx.ok) return ctx.response
+  const { restaurant } = ctx
 
-  const user = await getOrCreateDbUser()
-  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
-
-  const restaurant = await db.restaurant.findFirst({ where: { userId: user.id } })
-  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+  const allowed = await checkRateLimit(`yelp:connect:${restaurant.id}`, 5, 60)
+  if (!allowed) return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 })
 
   const body = await req.json()
   const businessName = String(body.businessName ?? '').trim()

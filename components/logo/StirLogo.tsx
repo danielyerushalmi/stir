@@ -57,7 +57,7 @@ export function StirLogo({ size = 'md', variant = 'full', className = '' }: Stir
           fontWeight: 600,
           color,
           letterSpacing: '-0.02em',
-          fontFamily: 'Inter, sans-serif',
+          fontFamily: "var(--font-figtree), sans-serif",
         }}
       >
         stir

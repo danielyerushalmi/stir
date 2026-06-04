@@ -110,6 +110,7 @@ export function AccountTab({ email, plan, memberSince, onToast }: AccountTabProp
           <input
             className="w-full rounded-lg border border-border bg-cream px-4 py-2.5 text-sm text-charcoal focus:border-red-dark focus:outline-none focus:ring-2 focus:ring-red-dark/20"
             placeholder="DELETE"
+            aria-label="Type DELETE to confirm"
             value={confirmText}
             onChange={e => setConfirmText(e.target.value)}
           />

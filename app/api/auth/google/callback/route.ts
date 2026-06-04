@@ -7,6 +7,16 @@ import { db } from '@/lib/db'
 import { getOrCreateDbUser } from '@/lib/user'
 import { exchangeCodeForTokens, buildClientFromTokens, fetchGoogleLocationNames } from '@/lib/google'
 
+function sanitizeReturnTo(raw: string | null | undefined): string {
+  if (!raw) return '/dashboard'
+  try {
+    const url = new URL(raw, 'http://localhost')
+    return url.pathname + url.search
+  } catch {
+    return '/dashboard'
+  }
+}
+
 export async function GET(req: Request) {
   const { userId } = auth()
   if (!userId) return NextResponse.redirect(new URL('/sign-in', req.url))
@@ -27,7 +37,7 @@ export async function GET(req: Request) {
   const cookieStore = cookies()
   const savedNonce = cookieStore.get('google_oauth_nonce')?.value
 
-  let parsedState: { nonce: string; returnTo: string }
+  let parsedState: { nonce: string; returnTo: string; userId?: string }
   try {
     parsedState = JSON.parse(Buffer.from(state, 'base64url').toString())
   } catch {
@@ -36,6 +46,10 @@ export async function GET(req: Request) {
 
   if (!savedNonce || parsedState.nonce !== savedNonce) return NextResponse.redirect(fallback)
   cookieStore.delete('google_oauth_nonce')
+
+  if (parsedState.userId && parsedState.userId !== userId) {
+    return NextResponse.redirect(new URL('/dashboard?error=oauth_mismatch', req.url))
+  }
 
   try {
     const user = await getOrCreateDbUser()
@@ -51,9 +65,7 @@ export async function GET(req: Request) {
     const locationNames = await fetchGoogleLocationNames(client)
 
     if (locationNames.length === 0) {
-      const safeReturn = parsedState.returnTo.startsWith('/') && !parsedState.returnTo.startsWith('//')
-        ? parsedState.returnTo
-        : '/dashboard'
+      const safeReturn = sanitizeReturnTo(parsedState.returnTo)
       const noLocUrl = new URL(safeReturn, req.url)
       noLocUrl.searchParams.set('error', 'google_no_location')
       return NextResponse.redirect(noLocUrl)
@@ -82,9 +94,7 @@ export async function GET(req: Request) {
       },
     })
 
-    const safeReturn = parsedState.returnTo.startsWith('/') && !parsedState.returnTo.startsWith('//')
-      ? parsedState.returnTo
-      : '/dashboard'
+    const safeReturn = sanitizeReturnTo(parsedState.returnTo)
     return NextResponse.redirect(new URL(safeReturn, req.url))
   } catch (err) {
     console.error('Google OAuth callback error:', err)

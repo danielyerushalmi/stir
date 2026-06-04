@@ -6,18 +6,25 @@ import { cookies } from 'next/headers'
 import { getGoogleOAuthUrl } from '@/lib/google'
 import crypto from 'crypto'
 
+function sanitizeReturnTo(raw: string | null): string {
+  if (!raw) return '/dashboard'
+  try {
+    const url = new URL(raw, 'http://localhost')
+    return url.pathname + url.search
+  } catch {
+    return '/dashboard'
+  }
+}
+
 export async function GET(req: Request) {
   const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const url = new URL(req.url)
-  const raw = url.searchParams.get('returnTo') ?? ''
-  const returnTo = raw.startsWith('/') && !raw.startsWith('//')
-    ? raw
-    : '/dashboard/settings?tab=platforms'
+  const returnTo = sanitizeReturnTo(url.searchParams.get('returnTo')) || '/dashboard/settings?tab=platforms'
 
   const nonce = crypto.randomBytes(16).toString('hex')
-  const state = Buffer.from(JSON.stringify({ nonce, returnTo })).toString('base64url')
+  const state = Buffer.from(JSON.stringify({ nonce, returnTo, userId })).toString('base64url')
 
   const cookieStore = cookies()
   cookieStore.set('google_oauth_nonce', nonce, {

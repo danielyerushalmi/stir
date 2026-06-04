@@ -15,3 +15,9 @@ export interface ScoreResult {
   trend: { direction: 'up' | 'down' | 'flat'; delta: number }
   deliveryScore: number | null
 }
+
+export const VALID_PLATFORMS = ['GOOGLE', 'YELP', 'TRIPADVISOR', 'FACEBOOK', 'DOORDASH', 'UBEREATS', 'GRUBHUB'] as const
+export type PlatformName = typeof VALID_PLATFORMS[number]
+
+export const VALID_REVIEW_TYPES = ['positive_5star', 'wait_complaint', 'price_complaint', 'food_complaint', 'service_complaint', 'mixed'] as const
+export type ReviewType = typeof VALID_REVIEW_TYPES[number]

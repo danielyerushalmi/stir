@@ -1,5 +1,6 @@
 'use client'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 
 const PRICING = [
   { name: 'Free', price: '$0', period: '', highlight: false, href: '/sign-up', cta: 'Start free', features: ['3 AI-drafted responses/month', '1 platform connected', 'Basic reputation score', 'Response approval workflow'] },
@@ -40,9 +41,15 @@ export function PricingSection() {
                   </li>
                 ))}
               </ul>
-              <a href={plan.href} className={`rounded-lg px-4 py-2.5 text-sm font-medium text-center transition-colors ${plan.highlight ? 'bg-orange text-white hover:bg-orange-dark' : 'border border-border text-brown hover:bg-cream'}`}>
-                {plan.cta}
-              </a>
+              {plan.href.startsWith('mailto:') ? (
+                <a href={plan.href} className={`rounded-lg px-4 py-2.5 text-sm font-medium text-center transition-colors ${plan.highlight ? 'bg-orange text-white hover:bg-orange-dark' : 'border border-border text-brown hover:bg-cream'}`}>
+                  {plan.cta}
+                </a>
+              ) : (
+                <Link href={plan.href} className={`rounded-lg px-4 py-2.5 text-sm font-medium text-center transition-colors ${plan.highlight ? 'bg-orange text-white hover:bg-orange-dark' : 'border border-border text-brown hover:bg-cream'}`}>
+                  {plan.cta}
+                </Link>
+              )}
             </motion.div>
           ))}
         </div>
