@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
 import { checkRateLimit } from '@/lib/redis'
 import { getOAuthClient, fetchGoogleReviews, GoogleDisconnectedError } from '@/lib/google'
+import { generateInsights } from '@/lib/ai'
 
 export async function POST() {
   const ctx = await requireRestaurant()
@@ -76,6 +77,10 @@ export async function POST() {
       where: { id: googlePlatform.id },
       data: { lastSyncedAt: new Date() },
     })
+
+    if (newCount > 0) {
+      generateInsights(restaurant.id).catch(err => console.error('Auto-insights error:', err))
+    }
 
     return NextResponse.json({ synced: newCount, updated: updatedCount })
   } catch (err) {

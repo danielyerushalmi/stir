@@ -60,6 +60,8 @@ export async function generateDraft(reviewId: string): Promise<string> {
     relevantSamples.map(s => ({ sampleReview: s.sampleReview, ownerResponse: s.ownerResponse })),
   )
 
+  const sentiment = review.rating <= 2 ? 'NEGATIVE' : review.rating === 3 ? 'NEUTRAL' : 'POSITIVE'
+
   // Change 2: 25-second AbortController timeout
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 25_000)
@@ -67,10 +69,10 @@ export async function generateDraft(reviewId: string): Promise<string> {
     const message = await anthropic.messages.create(
       {
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 200,
+        max_tokens: 250,
         system: systemPrompt,
         // Change 4: wrap review text in XML tags to prevent prompt injection
-        messages: [{ role: 'user', content: `Write a response to this review (${review.rating} stars):\n<review>${review.reviewText}</review>` }],
+        messages: [{ role: 'user', content: `Write a response to this ${sentiment} review (${review.rating} stars):\n<review>${review.reviewText}</review>` }],
       },
       { signal: controller.signal },
     )
@@ -133,6 +135,7 @@ export async function generateInsights(restaurantId: string): Promise<void> {
       reviewCount: Math.max(0, Math.floor(Number(i.reviewCount))),
       platforms: Array.isArray(i.platforms) ? i.platforms.map(String) : [],
     }))
+    if (safeInsights.length === 0) return
     await db.$transaction([
       db.insight.deleteMany({ where: { restaurantId } }),
       db.insight.createMany({ data: safeInsights }),

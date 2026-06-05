@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { MobileNav } from '@/components/dashboard/MobileNav'
 import { PageTransition } from '@/components/dashboard/PageTransition'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId } = auth()
@@ -11,7 +12,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="flex-1 bg-cream overflow-y-auto pb-16 md:pb-0">
-        <PageTransition>{children}</PageTransition>
+        <ErrorBoundary>
+          <PageTransition>{children}</PageTransition>
+        </ErrorBoundary>
       </main>
       <MobileNav />
     </div>

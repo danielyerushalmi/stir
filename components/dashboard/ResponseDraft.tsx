@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
+import { cn } from '@/lib/utils'
 
 interface ResponseDraftProps {
   reviewId: string
@@ -10,6 +11,7 @@ interface ResponseDraftProps {
   platform?: string
   onApprove: (reviewId: string, finalText: string) => Promise<void>
   onDismiss: (reviewId: string) => Promise<void>
+  onRegenerate?: () => void
 }
 
 function TypingDots() {
@@ -27,7 +29,7 @@ function TypingDots() {
   )
 }
 
-export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss }: ResponseDraftProps) {
+export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss, onRegenerate }: ResponseDraftProps) {
   const [text, setText] = useState(draft)
   const [loading, setLoading] = useState<'approve' | 'dismiss' | null>(null)
   const [posted, setPosted] = useState(false)
@@ -101,7 +103,10 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss 
         animate={{ opacity: 1, y: 0 }}
         className="rounded-xl border-l-4 border border-orange/30 border-l-orange bg-orange-light p-4"
       >
-        <p className="text-xs font-medium text-orange uppercase tracking-wide mb-2">AI Draft</p>
+        <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-orange/20">
+          <span className="text-orange text-sm" aria-hidden="true">✦</span>
+          <p className="text-sm font-medium text-orange">AI Draft</p>
+        </div>
         <AnimatePresence mode="wait">
           {showTyping ? (
             <motion.div key="typing" exit={{ opacity: 0 }}>
@@ -113,8 +118,14 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss 
                 rows={4}
                 value={text}
                 onChange={e => setText(e.target.value)}
-                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-brown focus:outline-none focus:ring-2 focus:ring-orange/20 mb-3"
+                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-brown focus:outline-none focus:ring-2 focus:ring-orange/20"
               />
+              <p className={cn(
+                'text-xs text-right mb-3 -mt-2',
+                text.length > 300 ? 'text-red-dark' : text.length >= 80 ? 'text-green' : 'text-text-lighter'
+              )}>
+                {text.length}/300
+              </p>
               <div className="flex gap-2">
                 {platform === 'YELP' ? (
                   <Button
@@ -136,6 +147,16 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss 
                     onClick={() => setShowConfirm(true)}
                   >
                     Approve & Post
+                  </Button>
+                )}
+                {onRegenerate && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={loading !== null}
+                    onClick={onRegenerate}
+                  >
+                    Regenerate
                   </Button>
                 )}
                 <Button
