@@ -21,29 +21,41 @@ export default async function DashboardPage({
   const restaurant = await db.restaurant.findFirst({ where: { userId: user.id } })
   if (!restaurant) redirect('/onboarding')
 
-  const [voiceSamples, scores, awaitingReply, recentReviews, insights] = await Promise.all([
+  const [voiceSamples, scores, awaitingReply, recentReviews, insights, totalReviews, respondedReviews] = await Promise.all([
     db.voiceSample.findMany({ where: { restaurantId: restaurant.id } }),
     getScoreResult(restaurant.id),
     db.review.count({ where: { restaurantId: restaurant.id, response: null } }),
     db.review.findMany({ where: { restaurantId: restaurant.id }, orderBy: { reviewDate: 'desc' }, take: 10, include: { response: true } }),
     db.insight.findMany({ where: { restaurantId: restaurant.id, isRead: false }, take: 3 }),
+    db.review.count({ where: { restaurantId: restaurant.id } }),
+    db.review.count({ where: { restaurantId: restaurant.id, response: { isNot: null } } }),
   ])
 
   const voiceComplete = voiceSamples.length >= 3
+  const responseRate = totalReviews > 0 ? Math.round((respondedReviews / totalReviews) * 100) : 0
+
+  const INSIGHT_STYLES = {
+    ALERT: { bg: 'bg-red-light/30', border: 'border-l-red-dark', label: 'Alert' },
+    TIP: { bg: 'bg-green-light/40', border: 'border-l-green', label: 'Tip' },
+    DELIVERY_GAP: { bg: 'bg-amber-light/30', border: 'border-l-amber-dark', label: 'Delivery' },
+  } as const
   const now = new Date()
   const hour = now.getHours()
   const timeGreeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
   const dayLabel = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-charcoal">{timeGreeting}, {restaurant.name}</h1>
+          <h1 className="text-2xl font-bold text-charcoal tracking-tight">{timeGreeting}, {restaurant.name}</h1>
           <p className="text-sm text-text-muted mt-1">{dayLabel}</p>
         </div>
         {awaitingReply > 0 && (
-          <span className="rounded-full bg-orange-light text-orange text-sm font-medium px-3 py-1">{awaitingReply} awaiting reply</span>
+          <div className="relative inline-flex">
+            <span className="absolute inset-0 rounded-full bg-orange/20 animate-ping" aria-hidden="true" />
+            <span className="relative rounded-full bg-orange-light text-orange text-sm font-medium px-3 py-1">{awaitingReply} awaiting reply</span>
+          </div>
         )}
       </div>
 
@@ -61,10 +73,11 @@ export default async function DashboardPage({
         <UpgradeBanner planName={searchParams.upgrade} />
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <ScoreCard label="Overall Score" score={scores.overall} trend={scores.trend} subtitle="Dine-in platforms only" />
         <ScoreCard label="Delivery Score" score={scores.deliveryScore} subtitle="Delivery orders only" />
         <ScoreCard label="Awaiting Reply" score={awaitingReply} integer subtitle={awaitingReply === 1 ? '1 unanswered review' : `${awaitingReply} unanswered reviews`} />
+        <ScoreCard label="Response Rate" score={responseRate} integer subtitle={`${respondedReviews} of ${totalReviews} reviews`} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -80,7 +93,9 @@ export default async function DashboardPage({
               </div>
             : <div className="flex flex-col gap-0">
                 {recentReviews.map(r => (
-                  <div key={r.id} className="flex items-start gap-3 py-3 border-b border-border last:border-0">
+                  <div key={r.id} className={`flex items-start gap-3 py-3 border-b border-border last:border-0 pl-3 border-l-4 ${
+                    r.rating >= 4 ? 'border-l-green' : r.rating <= 2 ? 'border-l-red-dark' : 'border-l-amber-dark'
+                  }`}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-xs font-medium text-text-lighter uppercase">{r.platform}</span>
@@ -103,8 +118,10 @@ export default async function DashboardPage({
             ? <p className="text-sm text-text-muted">Generate insights to see recommendations.</p>
             : <div className="flex flex-col gap-3">
                 {insights.map(i => (
-                  <div key={i.id} className="rounded-lg bg-warm-gray p-3">
-                    <p className="text-xs font-medium text-orange mb-0.5">{{ ALERT: 'Alert', TIP: 'Tip', DELIVERY_GAP: 'Delivery' }[i.type] ?? i.type}</p>
+                  <div key={i.id} className={`rounded-lg border-l-4 p-3 ${INSIGHT_STYLES[i.type as keyof typeof INSIGHT_STYLES]?.bg ?? 'bg-cream'} ${INSIGHT_STYLES[i.type as keyof typeof INSIGHT_STYLES]?.border ?? 'border-l-orange'}`}>
+                    <p className="text-xs font-medium text-orange mb-0.5">
+                      {INSIGHT_STYLES[i.type as keyof typeof INSIGHT_STYLES]?.label ?? i.type}
+                    </p>
                     <p className="text-sm font-medium text-charcoal">{i.title}</p>
                     <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{i.body}</p>
                   </div>

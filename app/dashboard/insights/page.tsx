@@ -19,6 +19,12 @@ const TYPE_META = {
   DELIVERY_GAP: { label: 'Delivery', variant: 'amber' as const },
 }
 
+const TYPE_VISUAL = {
+  ALERT: { icon: '⚠', bg: 'bg-red-light/30', border: 'border-l-red-dark' },
+  TIP: { icon: '💡', bg: 'bg-green-light/30', border: 'border-l-green' },
+  DELIVERY_GAP: { icon: '🚚', bg: 'bg-amber-light/30', border: 'border-l-amber-dark' },
+} as const
+
 const FILTER_OPTIONS = ['ALL', 'ALERT', 'TIP', 'DELIVERY_GAP'] as const
 type FilterOption = typeof FILTER_OPTIONS[number]
 
@@ -53,16 +59,17 @@ export default function InsightsPage() {
   }
 
   async function markRead(id: string) {
-    await fetch(`/api/insights/${id}/read`, { method: 'POST' })
+    const res = await fetch(`/api/insights/${id}/read`, { method: 'POST' })
+    if (!res.ok) return
     setInsights(prev => prev.map(i => i.id === id ? { ...i, isRead: true } : i))
   }
 
   const filtered = filter === 'ALL' ? insights : insights.filter(i => i.type === filter)
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-charcoal">Insights</h1>
+        <h1 className="text-2xl font-bold text-charcoal tracking-tight">Insights</h1>
         <Button size="sm" onClick={generate} disabled={generating}>
           {generating ? 'Generating...' : 'Regenerate insights'}
         </Button>
@@ -76,7 +83,7 @@ export default function InsightsPage() {
             key={f}
             onClick={() => setFilter(f)}
             aria-pressed={filter === f}
-            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${filter === f ? 'bg-orange text-white border-orange' : 'bg-white border-border text-text-muted hover:border-orange hover:text-orange'}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors min-h-[44px] flex items-center ${filter === f ? 'bg-orange text-white border-orange' : 'bg-white border-border text-text-muted hover:border-orange hover:text-orange'}`}
           >
             {f === 'ALL' ? 'All' : f === 'DELIVERY_GAP' ? 'Delivery' : TYPE_META[f].label}
           </button>
@@ -90,26 +97,31 @@ export default function InsightsPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-border bg-white p-8 text-center">
-          <p className="text-text-muted text-sm mb-4">
-            {insights.length === 0 ? 'No insights yet.' : 'No insights match this filter.'}
-          </p>
-          {insights.length === 0 && (
+        insights.length === 0 ? (
+          <div className="rounded-xl border border-border bg-white p-10 text-center">
+            <div className="text-4xl mb-4" aria-hidden="true">💡</div>
+            <h3 className="text-lg font-semibold text-charcoal mb-2">No insights yet</h3>
+            <p className="text-sm text-text-muted mb-5">Stir will analyze your reviews and surface what to fix first.</p>
             <Button onClick={generate} disabled={generating}>
               {generating ? 'Generating...' : 'Generate insights'}
             </Button>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-border bg-white p-8 text-center">
+            <p className="text-text-muted text-sm">No insights match this filter.</p>
+          </div>
+        )
       ) : (
         <div className="flex flex-col gap-4">
           {filtered.map(insight => (
             <div
               key={insight.id}
-              className={`rounded-xl border border-border bg-white p-5 ${insight.isRead ? 'opacity-60' : ''}`}
+              className={`rounded-xl border border-border border-l-4 p-5 ${TYPE_VISUAL[insight.type]?.bg ?? 'bg-white'} ${TYPE_VISUAL[insight.type]?.border ?? 'border-l-orange'} ${insight.isRead ? 'opacity-60' : ''}`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
+                    <span aria-hidden="true" className="text-base">{TYPE_VISUAL[insight.type]?.icon}</span>
                     <Badge variant={TYPE_META[insight.type].variant}>{TYPE_META[insight.type].label}</Badge>
                     <span className="text-xs text-text-lighter">
                       {insight.reviewCount} reviews · {insight.platforms.join(', ')}

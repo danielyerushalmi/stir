@@ -71,8 +71,8 @@ export default function ReviewsPage() {
     if (!res.ok) { setToast({ message: 'Failed to post response. Please try again.', type: 'error' }); return }
     const data = await res.json()
     if (data.warning) setToast({ message: data.warning, type: 'error' })
+    setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, response: { id: '', draftText: finalText, status: 'POSTED' } } : r))
     setActiveDrafts(prev => { const n = { ...prev }; delete n[reviewId]; return n })
-    loadReviews()
   }
 
   async function dismissDraft(reviewId: string) {
@@ -82,8 +82,8 @@ export default function ReviewsPage() {
       body: JSON.stringify({ reviewId, action: 'dismiss' }),
     })
     if (!res.ok) { setToast({ message: 'Failed to dismiss draft. Please try again.', type: 'error' }); return }
+    setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, response: null } : r))
     setActiveDrafts(prev => { const n = { ...prev }; delete n[reviewId]; return n })
-    loadReviews()
   }
 
   async function syncReviews() {
@@ -101,21 +101,37 @@ export default function ReviewsPage() {
   const RATINGS = ['', '1', '2', '3', '4', '5']
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       {toast && <Toast message={toast.message} type={toast.type} onDismiss={() => setToast(null)} />}
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-charcoal">Reviews</h1>
+        <h1 className="text-2xl font-bold text-charcoal tracking-tight">Reviews</h1>
         <Button size="sm" variant="secondary" onClick={syncReviews}>Sync reviews</Button>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
+        <span className="text-xs font-medium text-text-muted">Quick:</span>
+        <button
+          onClick={() => { setPage(1); setFilter({ platform: '', rating: '1' }) }}
+          className="rounded-full px-3 py-1 text-xs font-medium border transition-colors bg-red-light text-red-dark border-red-dark/30 hover:bg-red-dark hover:text-white flex-shrink-0 min-h-[36px] flex items-center"
+        >
+          🚨 1★ urgent
+        </button>
+        <button
+          onClick={() => { setPage(1); setFilter({ platform: '', rating: '' }); }}
+          className="rounded-full px-3 py-1 text-xs font-medium border border-border text-text-muted hover:border-orange hover:text-orange transition-colors flex-shrink-0 min-h-[36px] flex items-center"
+        >
+          Clear filters
+        </button>
+      </div>
+
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
         {PLATFORMS.map(p => (
           <button
             key={p}
             onClick={() => { setPage(1); setFilter(f => ({ ...f, platform: p })) }}
             aria-pressed={filter.platform === p}
-            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${filter.platform === p ? 'bg-orange text-white border-orange' : 'bg-white border-border text-text-muted hover:border-orange hover:text-orange'}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors flex-shrink-0 min-h-[44px] flex items-center ${filter.platform === p ? 'bg-orange text-white border-orange' : 'bg-white border-border text-text-muted hover:border-orange hover:text-orange'}`}
           >
             {p || 'All platforms'}
           </button>
@@ -125,7 +141,7 @@ export default function ReviewsPage() {
             key={r}
             onClick={() => { setPage(1); setFilter(f => ({ ...f, rating: r })) }}
             aria-pressed={filter.rating === r}
-            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${filter.rating === r ? 'bg-orange text-white border-orange' : 'bg-white border-border text-text-muted hover:border-orange hover:text-orange'}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors flex-shrink-0 min-h-[44px] flex items-center ${filter.rating === r ? 'bg-orange text-white border-orange' : 'bg-white border-border text-text-muted hover:border-orange hover:text-orange'}`}
           >
             {r ? `${r}★` : 'All ratings'}
           </button>
@@ -135,13 +151,33 @@ export default function ReviewsPage() {
       {loading ? (
         <div className="flex flex-col gap-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-24 rounded-xl border border-border bg-white animate-pulse" />
+            <div key={i} className="rounded-xl border border-border border-l-4 border-l-border bg-white p-4 animate-pulse">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-5 w-14 rounded-full bg-border" />
+                <div className="h-3 w-20 rounded bg-border" />
+              </div>
+              <div className="h-3 w-24 rounded bg-border mb-1" />
+              <div className="h-3 w-full rounded bg-border mb-1" />
+              <div className="h-3 w-3/4 rounded bg-border mb-3" />
+              <div className="h-8 w-24 rounded-lg bg-border" />
+            </div>
           ))}
         </div>
       ) : reviews.length === 0 ? (
-        <div className="rounded-xl border border-border bg-white p-8 text-center">
-          <p className="text-text-muted text-sm">No reviews found. Connect Google in Settings and sync to get started.</p>
-        </div>
+        filter.platform === '' && filter.rating === '' ? (
+          <div className="rounded-xl border border-border bg-white p-10 text-center">
+            <div className="text-4xl mb-4" aria-hidden="true">⭐</div>
+            <h3 className="text-lg font-semibold text-charcoal mb-2">No reviews yet</h3>
+            <p className="text-sm text-text-muted mb-5">Connect your Google account to start pulling in reviews.</p>
+            <a href="/dashboard/settings?tab=platforms" className="inline-flex items-center rounded-lg bg-orange px-4 py-2 text-sm font-medium text-white hover:bg-orange-dark transition-colors">
+              Connect Google →
+            </a>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-border bg-white p-8 text-center">
+            <p className="text-text-muted text-sm">No reviews match this filter.</p>
+          </div>
+        )
       ) : (
         <div className="flex flex-col gap-3">
           {reviews.map(review => (
@@ -155,6 +191,7 @@ export default function ReviewsPage() {
                     platform={review.platform}
                     onApprove={approveDraft}
                     onDismiss={dismissDraft}
+                    onRegenerate={() => requestDraft(review.id)}
                   />
                 </div>
               )}
