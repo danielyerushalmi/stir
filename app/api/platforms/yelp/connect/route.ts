@@ -17,11 +17,19 @@ export async function POST(req: Request) {
   const allowed = await checkRateLimit(`yelp:connect:${restaurant.id}`, 5, 60)
   if (!allowed) return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 })
 
-  const body = await req.json()
-  const businessName = String(body.businessName ?? '').trim()
-  const location = String(body.location ?? '').trim()
+  let rawBody: Record<string, unknown>
+  try {
+    rawBody = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  const businessName = String(rawBody.businessName ?? '').trim()
+  const location = String(rawBody.location ?? '').trim()
   if (!businessName || !location) {
     return NextResponse.json({ error: 'businessName and location are required' }, { status: 400 })
+  }
+  if (businessName.length > 200 || location.length > 200) {
+    return NextResponse.json({ error: 'businessName and location must be 200 characters or fewer' }, { status: 400 })
   }
 
   try {

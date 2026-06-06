@@ -12,9 +12,19 @@ export async function POST(req: Request) {
   const allowed = await checkRateLimit(`respond:${restaurant.id}`, 30, 60)
   if (!allowed) return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 })
 
-  const { reviewId, finalText, action, postToGoogle } = await req.json()
+  let reviewId: unknown, finalText: unknown, action: unknown, postToGoogle: unknown
+  try {
+    const body = await req.json()
+    reviewId = body?.reviewId
+    finalText = body?.finalText
+    action = body?.action
+    postToGoogle = body?.postToGoogle
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  if (!reviewId || typeof reviewId !== 'string') return NextResponse.json({ error: 'reviewId required' }, { status: 400 })
   const VALID_ACTIONS = ['approve', 'dismiss']
-  if (!action || !VALID_ACTIONS.includes(action))
+  if (!action || typeof action !== 'string' || !VALID_ACTIONS.includes(action))
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
 
   const review = await db.review.findFirst({

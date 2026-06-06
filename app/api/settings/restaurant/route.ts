@@ -8,9 +8,20 @@ export async function PUT(req: Request) {
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
 
-  const { name, cuisineType, city, vibe } = await req.json()
+  let name: unknown, cuisineType: unknown, city: unknown, vibe: unknown
+  try {
+    const body = await req.json()
+    name = body?.name
+    cuisineType = body?.cuisineType
+    city = body?.city
+    vibe = body?.vibe
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
   if (!name || !cuisineType || !city || !vibe)
     return NextResponse.json({ error: 'All fields required' }, { status: 400 })
+  if (typeof name !== 'string' || typeof cuisineType !== 'string' || typeof city !== 'string' || typeof vibe !== 'string')
+    return NextResponse.json({ error: 'All fields must be strings' }, { status: 400 })
   if (name.length > 100 || cuisineType.length > 100 || city.length > 100 || vibe.length > 500)
     return NextResponse.json({ error: 'One or more fields exceed maximum length' }, { status: 400 })
 

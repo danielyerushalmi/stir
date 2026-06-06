@@ -1,5 +1,16 @@
-import { describe, it, expect } from 'vitest'
-import { calculateOverallScore, calculateDeliveryScore, calculateTrend } from '../scoring'
+// @vitest-environment node
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { calculateOverallScore, calculateDeliveryScore, calculateTrend, getScoreResult } from '../scoring'
+
+vi.mock('@/lib/db', () => ({
+  db: {
+    review: { findMany: vi.fn() },
+    restaurant: { findUnique: vi.fn() },
+  },
+}))
+
+import { db } from '@/lib/db'
 
 const makeReview = (platform: string, rating: number, isDelivery: boolean, daysAgo: number) => ({
   platform,
@@ -89,5 +100,105 @@ describe('calculateTrend', () => {
     const trend = calculateTrend([...recent, ...old])
     expect(trend.direction).toBe('up')
     expect(trend.delta).toBeGreaterThan(0)
+  })
+
+  it('detects downward trend', () => {
+    const recent = [makeReview('GOOGLE', 2, false, 5)]
+    const old = [makeReview('GOOGLE', 5, false, 40)]
+    const trend = calculateTrend([...recent, ...old])
+    expect(trend.direction).toBe('down')
+    expect(trend.delta).toBeGreaterThan(0)
+  })
+
+  it('returns flat when only recent reviews exist (no prior data)', () => {
+    const reviews = [makeReview('GOOGLE', 4, false, 10)]
+    expect(calculateTrend(reviews)).toEqual({ direction: 'flat', delta: 0 })
+  })
+
+  it('returns flat when only prior reviews exist (no recent data)', () => {
+    const reviews = [makeReview('GOOGLE', 4, false, 50)]
+    expect(calculateTrend(reviews)).toEqual({ direction: 'flat', delta: 0 })
+  })
+
+  it('ignores delivery reviews', () => {
+    const reviews = [
+      makeReview('GOOGLE', 5, false, 5),
+      makeReview('DOORDASH', 1, true, 5),  // delivery — should be ignored
+      makeReview('GOOGLE', 3, false, 40),
+    ]
+    const trend = calculateTrend(reviews)
+    expect(trend.direction).toBe('up')
+  })
+
+  it('delta is always non-negative', () => {
+    const recent = [makeReview('GOOGLE', 2, false, 5)]
+    const old = [makeReview('GOOGLE', 5, false, 40)]
+    const trend = calculateTrend([...recent, ...old])
+    expect(trend.delta).toBeGreaterThanOrEqual(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// getScoreResult (mocked db)
+// ---------------------------------------------------------------------------
+
+describe('getScoreResult', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should return overall, trend, and deliveryScore properties', async () => {
+    vi.mocked(db.review.findMany).mockResolvedValue([
+      makeReview('GOOGLE', 5, false, 5),
+    ] as any)
+    vi.mocked(db.restaurant.findUnique).mockResolvedValue({ yelpRating: null } as any)
+
+    const result = await getScoreResult('rest-1')
+
+    expect(result).toHaveProperty('overall')
+    expect(result).toHaveProperty('trend')
+    expect(result).toHaveProperty('deliveryScore')
+  })
+
+  it('should use yelpRating from the restaurant row as a YELP platform aggregate', async () => {
+    vi.mocked(db.review.findMany).mockResolvedValue([] as any)
+    vi.mocked(db.restaurant.findUnique).mockResolvedValue({ yelpRating: 4.5 } as any)
+
+    const result = await getScoreResult('rest-2')
+
+    expect(result.overall).toBe(4.5)
+  })
+
+  it('should return null overall when no reviews and no yelpRating', async () => {
+    vi.mocked(db.review.findMany).mockResolvedValue([] as any)
+    vi.mocked(db.restaurant.findUnique).mockResolvedValue({ yelpRating: null } as any)
+
+    const result = await getScoreResult('rest-3')
+
+    expect(result.overall).toBeNull()
+    expect(result.deliveryScore).toBeNull()
+    expect(result.trend).toEqual({ direction: 'flat', delta: 0 })
+  })
+
+  it('should handle restaurant.findUnique returning null without throwing', async () => {
+    vi.mocked(db.review.findMany).mockResolvedValue([] as any)
+    vi.mocked(db.restaurant.findUnique).mockResolvedValue(null as any)
+
+    await expect(getScoreResult('rest-4')).resolves.not.toThrow()
+    const result = await getScoreResult('rest-4')
+    expect(result.overall).toBeNull()
+  })
+
+  it('should calculate deliveryScore from delivery reviews', async () => {
+    vi.mocked(db.review.findMany).mockResolvedValue([
+      makeReview('DOORDASH', 4, true, 5),
+      makeReview('UBEREATS', 2, true, 5),
+    ] as any)
+    vi.mocked(db.restaurant.findUnique).mockResolvedValue({ yelpRating: null } as any)
+
+    const result = await getScoreResult('rest-5')
+
+    expect(result.deliveryScore).toBe(3.0)
+    expect(result.overall).toBeNull() // delivery reviews don't count toward overall
   })
 })

@@ -28,7 +28,7 @@ function StarRating({ rating }: { rating: number }) {
           />
         </svg>
       ))}
-      <span className="ml-1 text-xs font-medium text-text-muted">{rating}.0</span>
+      <span className="ml-1 text-xs font-medium text-text-muted">{Number.isInteger(rating) ? `${rating}.0` : rating}</span>
     </span>
   )
 }

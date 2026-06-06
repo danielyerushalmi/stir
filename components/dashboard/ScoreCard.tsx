@@ -18,8 +18,10 @@ function useCountUp(target: number | null, duration = 1200) {
   useEffect(() => {
     if (target === null) return
     if (prefersReduced) { setValue(target); return }
+    let cancelled = false
     const start = Date.now()
     const tick = () => {
+      if (cancelled) return
       const elapsed = Date.now() - start
       const progress = Math.min(elapsed / duration, 1)
       const eased = 1 - Math.pow(1 - progress, 3)
@@ -27,6 +29,7 @@ function useCountUp(target: number | null, duration = 1200) {
       if (progress < 1) requestAnimationFrame(tick)
     }
     requestAnimationFrame(tick)
+    return () => { cancelled = true }
   }, [target, duration, prefersReduced])
 
   return value
