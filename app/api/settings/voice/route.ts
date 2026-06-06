@@ -13,10 +13,20 @@ export async function POST(req: Request) {
   const allowed = await checkRateLimit(`voice:post:${restaurant.id}`, 20, 60)
   if (!allowed) return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 })
 
-  const { reviewType, sampleReview, ownerResponse } = await req.json()
+  let reviewType: unknown, sampleReview: unknown, ownerResponse: unknown
+  try {
+    const body = await req.json()
+    reviewType = body?.reviewType
+    sampleReview = body?.sampleReview
+    ownerResponse = body?.ownerResponse
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
   if (!reviewType || !sampleReview || !ownerResponse)
     return NextResponse.json({ error: 'All fields required' }, { status: 400 })
-  if (!VALID_REVIEW_TYPES.includes(reviewType))
+  if (typeof reviewType !== 'string' || typeof sampleReview !== 'string' || typeof ownerResponse !== 'string')
+    return NextResponse.json({ error: 'All fields must be strings' }, { status: 400 })
+  if (!VALID_REVIEW_TYPES.includes(reviewType as typeof VALID_REVIEW_TYPES[number]))
     return NextResponse.json({ error: 'Invalid reviewType' }, { status: 400 })
   if (sampleReview.length > 1000 || ownerResponse.length > 1000)
     return NextResponse.json({ error: 'Sample text exceeds maximum length (1000 characters)' }, { status: 400 })

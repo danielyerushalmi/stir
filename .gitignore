@@ -48,5 +48,6 @@ next-env.d.ts
 .agents/
 .claude-flow/
 .swarm/
+.playwright-mcp/
 ruvector.db
 skills-lock.json

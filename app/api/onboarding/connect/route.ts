@@ -10,8 +10,15 @@ export async function POST(req: Request) {
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
 
-  const { platform, externalId } = await req.json()
-  if (!platform || !VALID_PLATFORMS.includes(platform)) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
+  let platform: unknown, externalId: unknown
+  try {
+    const body = await req.json()
+    platform = body?.platform
+    externalId = body?.externalId
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  if (!platform || typeof platform !== 'string' || !VALID_PLATFORMS.includes(platform as typeof VALID_PLATFORMS[number])) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
   if (externalId !== undefined && externalId !== null) {
     if (platform === 'GOOGLE') {
       return NextResponse.json({ error: 'Google externalId must come from the OAuth callback, not user input' }, { status: 400 })
@@ -21,10 +28,11 @@ export async function POST(req: Request) {
     }
   }
 
+  const safeExternalId = (typeof externalId === 'string' && externalId) ? externalId : `mock_${platform.toLowerCase()}`
   await db.platform.upsert({
     where: { restaurantId_name: { restaurantId: restaurant.id, name: platform } },
-    update: { isConnected: true, externalId: externalId || `mock_${platform.toLowerCase()}` },
-    create: { restaurantId: restaurant.id, name: platform, isConnected: true, externalId: externalId || `mock_${platform.toLowerCase()}` },
+    update: { isConnected: true, externalId: safeExternalId },
+    create: { restaurantId: restaurant.id, name: platform, isConnected: true, externalId: safeExternalId },
   })
 
   return NextResponse.json({ ok: true })

@@ -8,9 +8,15 @@ export async function POST(req: Request) {
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
 
-  const { platform } = await req.json()
+  let platform: unknown
+  try {
+    const body = await req.json()
+    platform = body?.platform
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
   const MOCK_PLATFORMS = ['TRIPADVISOR', 'FACEBOOK', 'DOORDASH', 'UBEREATS', 'GRUBHUB']
-  if (!platform || !MOCK_PLATFORMS.includes(platform)) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
+  if (!platform || typeof platform !== 'string' || !MOCK_PLATFORMS.includes(platform)) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
 
   await db.platform.upsert({
     where: { restaurantId_name: { restaurantId: restaurant.id, name: platform } },

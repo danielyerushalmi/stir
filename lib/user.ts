@@ -1,5 +1,4 @@
-import { auth } from '@clerk/nextjs/server'
-import { currentUser } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { db } from './db'
 import type { User, Restaurant } from '@prisma/client'
@@ -23,7 +22,7 @@ type RequireRestaurantResult =
   | { ok: false; response: NextResponse }
 
 export async function requireRestaurant(): Promise<RequireRestaurantResult> {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
 
   const user = await getOrCreateDbUser()

@@ -38,9 +38,14 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss,
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
+    setText(draft)
+    setShowTyping(true)
+  }, [draft])
+
+  useEffect(() => {
     const t = setTimeout(() => setShowTyping(false), 1000)
     return () => clearTimeout(t)
-  }, [])
+  }, [draft])
 
   if (posted) {
     return (
@@ -79,9 +84,12 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss,
                 onClick={async () => {
                   setShowConfirm(false)
                   setLoading('approve')
-                  await onApprove(reviewId, text)
-                  setPosted(true)
-                  setLoading(null)
+                  try {
+                    await onApprove(reviewId, text)
+                    setPosted(true)
+                  } finally {
+                    setLoading(null)
+                  }
                 }}
               >
                 {loading === 'approve' ? 'Posting...' : 'Confirm & post'}
@@ -165,8 +173,11 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss,
                   disabled={loading !== null}
                   onClick={async () => {
                     setLoading('dismiss')
-                    await onDismiss(reviewId)
-                    setLoading(null)
+                    try {
+                      await onDismiss(reviewId)
+                    } finally {
+                      setLoading(null)
+                    }
                   }}
                 >
                   Dismiss

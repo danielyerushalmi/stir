@@ -12,8 +12,14 @@ export async function POST(req: Request) {
   const restaurantWithSub = await db.restaurant.findUnique({ where: { id: restaurant.id }, include: { subscription: true } })
   if (!restaurantWithSub) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
 
-  const { reviewId } = await req.json()
-  if (!reviewId) return NextResponse.json({ error: 'reviewId required' }, { status: 400 })
+  let reviewId: unknown
+  try {
+    const body = await req.json()
+    reviewId = body?.reviewId
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  if (!reviewId || typeof reviewId !== 'string') return NextResponse.json({ error: 'reviewId required' }, { status: 400 })
 
   // Verify review belongs to this restaurant before consuming rate limit quota
   const review = await db.review.findFirst({ where: { id: reviewId, restaurantId: restaurant.id } })

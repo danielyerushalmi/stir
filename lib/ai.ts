@@ -2,7 +2,6 @@ import Anthropic from '@anthropic-ai/sdk'
 import { db } from './db'
 import { classifyReviewType } from './reviews'
 
-// Change 1: module-level singleton instead of factory function
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export function buildDraftSystemPrompt(
@@ -10,12 +9,10 @@ export function buildDraftSystemPrompt(
   vibe: string,
   samples: { sampleReview: string; ownerResponse: string }[],
 ): string {
-  // Change 3: wrap example content in XML tags to prevent prompt injection
   const examplesBlock = samples.length > 0
     ? `\n\nHere are real responses the owner has written. Match their tone, length, and vocabulary exactly:\n\n${samples.map((s, i) => `Example ${i + 1}:\nReview: <review>${s.sampleReview}</review>\nOwner response: <response>${s.ownerResponse}</response>`).join('\n\n')}`
     : ''
 
-  // Change 3: wrap restaurantName and vibe in XML tags; add data-only instruction
   return `You write review responses for a restaurant.
 Restaurant name: <restaurant_name>${restaurantName}</restaurant_name>
 Restaurant description: <restaurant_vibe>${vibe}</restaurant_vibe>
@@ -62,7 +59,6 @@ export async function generateDraft(reviewId: string): Promise<string> {
 
   const sentiment = review.rating <= 2 ? 'NEGATIVE' : review.rating === 3 ? 'NEUTRAL' : 'POSITIVE'
 
-  // Change 2: 25-second AbortController timeout
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 25_000)
   try {
@@ -71,13 +67,11 @@ export async function generateDraft(reviewId: string): Promise<string> {
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 250,
         system: systemPrompt,
-        // Change 4: wrap review text in XML tags to prevent prompt injection
         messages: [{ role: 'user', content: `Write a response to this ${sentiment} review (${review.rating} stars):\n<review>${review.reviewText}</review>` }],
       },
       { signal: controller.signal },
     )
 
-    // Change 7: narrow the unsafe cast with a type guard
     const block = message.content[0]
     if (!block || block.type !== 'text') throw new Error('Unexpected AI response format')
     return block.text.trim()
@@ -88,7 +82,6 @@ export async function generateDraft(reviewId: string): Promise<string> {
 
 export async function generateInsights(restaurantId: string): Promise<void> {
   const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
-  // Change 5: add take: 150 to cap the number of reviews fetched
   const reviews = await db.review.findMany({
     where: { restaurantId, reviewDate: { gte: since } },
     orderBy: { reviewDate: 'desc' },
@@ -96,11 +89,9 @@ export async function generateInsights(restaurantId: string): Promise<void> {
   })
   if (reviews.length === 0) return
 
-  // Change 5: wrap each review text in XML tags to prevent prompt injection
   const reviewSummary = reviews.map(r => `[${r.platform}] ${r.rating}★ <review>${r.reviewText.slice(0, 300)}</review>`).join('\n')
 
   const hasYelp = reviews.some(r => r.platform === 'YELP')
-  // Change 2: 25-second AbortController timeout
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 25_000)
   try {
@@ -114,19 +105,19 @@ export async function generateInsights(restaurantId: string): Promise<void> {
       { signal: controller.signal },
     )
 
-    // Change 7: narrow the unsafe cast with a type guard
     const block = message.content[0]
     if (!block || block.type !== 'text') throw new Error('Unexpected AI response format')
     const raw = block.text.trim()
       .replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/, '')
-    let insights: { type: string; title: string; body: string; reviewCount: number; platforms: string[] }[]
+    let parsed: unknown
     try {
-      insights = JSON.parse(raw)
+      parsed = JSON.parse(raw)
     } catch {
       throw new Error('AI returned malformed JSON for insights')
     }
+    if (!Array.isArray(parsed)) throw new Error('AI returned malformed JSON for insights')
+    const insights = parsed as { type: unknown; title: unknown; body: unknown; reviewCount: unknown; platforms: unknown }[]
 
-    // Change 6: validate AI output fields and wrap delete+create in a $transaction
     const safeInsights = insights.map(i => ({
       restaurantId,
       type: String(i.type).slice(0, 50),
