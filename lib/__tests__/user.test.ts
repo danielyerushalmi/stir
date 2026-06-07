@@ -16,6 +16,7 @@ vi.mock('@/lib/db', () => ({
     user: { upsert: vi.fn() },
     restaurant: { findFirst: vi.fn() },
   },
+  setUserContext: vi.fn(),
 }))
 
 // next/server is available in the test environment through jsdom + Next config,

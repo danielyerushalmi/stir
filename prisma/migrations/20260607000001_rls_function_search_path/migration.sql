@@ -1,0 +1,11 @@
+-- Pin search_path on app.current_clerk_id().
+--
+-- Supabase's security advisor flags "Function Search Path Mutable": this function
+-- was created without an explicit search_path. A mutable search_path on a function
+-- used inside RLS policies is a hardening gap. The other app.* helpers already pin
+-- SET search_path (they are SECURITY DEFINER with `SET search_path = public`).
+--
+-- Empty search_path is safe here: the body only calls pg_catalog builtins
+-- (current_setting, nullif), which resolve regardless of search_path. Idempotent —
+-- safe to run even if already applied manually via the SQL editor.
+ALTER FUNCTION app.current_clerk_id() SET search_path = '';

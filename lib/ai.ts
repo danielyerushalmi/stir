@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { db } from './db'
+import { db, rlsTransaction } from './db'
 import { classifyReviewType } from './reviews'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -133,10 +133,10 @@ export async function generateInsights(restaurantId: string): Promise<void> {
       platforms: Array.isArray(i.platforms) ? i.platforms.map(String) : [],
     }))
     if (safeInsights.length === 0) return
-    await db.$transaction([
-      db.insight.deleteMany({ where: { restaurantId } }),
-      db.insight.createMany({ data: safeInsights }),
-    ])
+    await rlsTransaction(async (tx) => {
+      await tx.insight.deleteMany({ where: { restaurantId } })
+      await tx.insight.createMany({ data: safeInsights })
+    })
   } finally {
     clearTimeout(timer)
   }

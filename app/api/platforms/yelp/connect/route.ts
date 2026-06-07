@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, rlsTransaction } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
 import { getBusinessByName, getReviews, YelpApiError } from '@/lib/yelp'
 import { checkRateLimit } from '@/lib/redis'
@@ -35,8 +35,8 @@ export async function POST(req: Request) {
   try {
     const { businessId, rating, reviewCount } = await getBusinessByName(businessName, location)
 
-    await db.$transaction([
-      db.platform.upsert({
+    await rlsTransaction(async (tx) => {
+      await tx.platform.upsert({
         where: { restaurantId_name: { restaurantId: restaurant.id, name: 'YELP' } },
         update: { isConnected: true, externalId: businessId, lastSyncedAt: new Date() },
         create: {
@@ -46,19 +46,32 @@ export async function POST(req: Request) {
           externalId: businessId,
           lastSyncedAt: new Date(),
         },
-      }),
-      db.restaurant.update({
+      })
+      await tx.restaurant.update({
         where: { id: restaurant.id },
         data: { yelpBusinessId: businessId, yelpRating: rating, yelpReviewCount: reviewCount },
-      }),
-    ])
+      })
+    })
 
     const reviews = await getReviews(businessId)
-    for (const r of reviews) {
-      await db.review.upsert({
-        where: { platform_externalId: { platform: 'YELP', externalId: r.externalId } },
-        update: { rating: r.rating, reviewText: r.reviewText, authorName: r.authorName },
-        create: {
+
+    // Review has a GLOBAL unique key on (platform, externalId). If another
+    // restaurant has already connected this same Yelp business, its review rows
+    // share these externalIds — never touch them. Only create rows that are new
+    // and update rows already owned by this restaurant.
+    const existing = await db.review.findMany({
+      where: { platform: 'YELP', externalId: { in: reviews.map(r => r.externalId) } },
+      select: { externalId: true, restaurantId: true },
+    })
+    const mine = new Set(existing.filter(e => e.restaurantId === restaurant.id).map(e => e.externalId))
+    const ownedByOther = new Set(existing.filter(e => e.restaurantId !== restaurant.id).map(e => e.externalId))
+
+    const toCreate = reviews.filter(r => !mine.has(r.externalId) && !ownedByOther.has(r.externalId))
+    const toUpdate = reviews.filter(r => mine.has(r.externalId))
+
+    if (toCreate.length > 0) {
+      await db.review.createMany({
+        data: toCreate.map(r => ({
           restaurantId: restaurant.id,
           platform: 'YELP',
           externalId: r.externalId,
@@ -67,7 +80,19 @@ export async function POST(req: Request) {
           authorName: r.authorName,
           isDelivery: false,
           reviewDate: r.reviewDate,
-        },
+        })),
+        skipDuplicates: true,
+      })
+    }
+
+    if (toUpdate.length > 0) {
+      await rlsTransaction(async (tx) => {
+        for (const r of toUpdate) {
+          await tx.review.update({
+            where: { platform_externalId: { platform: 'YELP', externalId: r.externalId } },
+            data: { rating: r.rating, reviewText: r.reviewText, authorName: r.authorName },
+          })
+        }
       })
     }
 
