@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, rlsTransaction } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
 import { checkRateLimit } from '@/lib/redis'
 import { getOAuthClient, fetchGoogleReviews, GoogleDisconnectedError } from '@/lib/google'
@@ -60,14 +60,14 @@ export async function POST() {
 
     // Batch update in a transaction
     if (toUpdate.length > 0) {
-      await db.$transaction(
-        toUpdate.map(r =>
-          db.review.update({
+      await rlsTransaction(async (tx) => {
+        for (const r of toUpdate) {
+          await tx.review.update({
             where: { platform_externalId: { platform: 'GOOGLE', externalId: r.externalId } },
             data: { rating: r.rating, reviewText: r.reviewText, authorName: r.authorName },
           })
-        )
-      )
+        }
+      })
     }
 
     const newCount = toCreate.length

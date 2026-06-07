@@ -4,7 +4,9 @@ import { config } from 'dotenv'
 
 config({ path: '.env.local' })
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
+// Seed via the direct (service-role) connection so it keeps working after
+// DATABASE_URL is rotated to the restricted, RLS-enforced application role.
+const adapter = new PrismaPg({ connectionString: process.env.DIRECT_URL ?? process.env.DATABASE_URL! })
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
