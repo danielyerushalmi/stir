@@ -31,6 +31,13 @@ export async function POST(req: Request) {
   if (sampleReview.length > 1000 || ownerResponse.length > 1000)
     return NextResponse.json({ error: 'Sample text exceeds maximum length (1000 characters)' }, { status: 400 })
 
+  // Cap total samples per restaurant — drafting only ever uses ~3, so unbounded
+  // creation just grows the table and the prompt without benefit.
+  const MAX_VOICE_SAMPLES = 30
+  const existingCount = await db.voiceSample.count({ where: { restaurantId: restaurant.id } })
+  if (existingCount >= MAX_VOICE_SAMPLES)
+    return NextResponse.json({ error: `Maximum of ${MAX_VOICE_SAMPLES} voice samples reached.` }, { status: 400 })
+
   const sample = await db.voiceSample.create({
     data: { restaurantId: restaurant.id, reviewType, sampleReview, ownerResponse },
   })
