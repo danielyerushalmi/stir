@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const allowed = await checkRateLimit(`onboarding:restaurant:${userId}`, 10, 60)
+  const allowed = await checkRateLimit(`onboarding:restaurant:${userId}`, 30, 60)
   if (!allowed) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
 
   const user = await getOrCreateDbUser()
