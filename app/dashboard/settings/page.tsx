@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { Toast } from '@/components/ui/Toast'
 import { RestaurantTab } from './_components/RestaurantTab'
@@ -44,18 +43,16 @@ const VALID_TABS: Tab[] = ['restaurant', 'platforms', 'voice', 'account']
 
 export default function SettingsPage() {
   const { user } = useUser()
-  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<Tab>('restaurant')
   const [data, setData] = useState<SettingsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
 
-  // Read ?tab= on mount so OAuth redirects land on the correct tab
   useEffect(() => {
-    const tab = searchParams.get('tab') as Tab | null
+    const tab = new URLSearchParams(window.location.search).get('tab') as Tab | null
     if (tab && VALID_TABS.includes(tab)) setActiveTab(tab)
-  }, [searchParams])
+  }, [])
 
   const showToast = useCallback((message: string, type: 'success' | 'error') => {
     setToast({ message, type })
