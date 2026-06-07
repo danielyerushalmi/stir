@@ -54,6 +54,12 @@ export async function POST(req: Request) {
     }
 
     if (postToGoogle && review.platform === 'GOOGLE') {
+      const sub = await db.subscription.findUnique({ where: { restaurantId: restaurant.id } })
+      const plan = sub?.plan ?? 'FREE'
+      if (plan === 'FREE') {
+        return NextResponse.json({ error: 'UPGRADE_REQUIRED', message: 'Posting to Google requires a paid plan.' }, { status: 402 })
+      }
+
       const googlePlatform = await db.platform.findUnique({
         where: { restaurantId_name: { restaurantId: restaurant.id, name: 'GOOGLE' } },
       })

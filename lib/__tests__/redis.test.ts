@@ -2,85 +2,64 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// ---------------------------------------------------------------------------
-// Mock @upstash/redis at the constructor level using vi.hoisted so the mock
-// function reference is available inside the hoisted vi.mock factory.
-// Using a regular function (not arrow) as the constructor so `new Redis()` works.
-// ---------------------------------------------------------------------------
-const mockEval = vi.hoisted(() => vi.fn())
+const mockLimit = vi.hoisted(() => vi.fn())
+const mockSlidingWindow = vi.hoisted(() => vi.fn(() => ({ type: 'slidingWindow' })))
+
+vi.mock('@upstash/ratelimit', () => ({
+  Ratelimit: class {
+    constructor() {}
+    limit = mockLimit
+    static slidingWindow = mockSlidingWindow
+  },
+}))
 
 vi.mock('@upstash/redis', () => {
-  function Redis(this: any) {
-    this.eval = mockEval
-  }
+  function Redis(this: any) {}
   return { Redis }
 })
 
 import { checkRateLimit } from '../redis'
 
 describe('checkRateLimit', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+  beforeEach(() => { vi.clearAllMocks() })
+
+  it('returns true when sliding window allows the request', async () => {
+    mockLimit.mockResolvedValue({ success: true })
+    expect(await checkRateLimit('user:abc', 5, 60)).toBe(true)
   })
 
-  it('should return true when the request count is below the limit', async () => {
-    mockEval.mockResolvedValue(1) // first request in the window
-
-    const allowed = await checkRateLimit('user:abc:draft', 5, 60)
-
-    expect(allowed).toBe(true)
+  it('returns false when sliding window denies the request', async () => {
+    mockLimit.mockResolvedValue({ success: false })
+    expect(await checkRateLimit('user:abc', 5, 60)).toBe(false)
   })
 
-  it('should return true when the request count equals the limit', async () => {
-    mockEval.mockResolvedValue(5) // exactly at the limit
-
-    const allowed = await checkRateLimit('user:abc:draft', 5, 60)
-
-    expect(allowed).toBe(true)
-  })
-
-  it('should return false when the request count exceeds the limit', async () => {
-    mockEval.mockResolvedValue(6) // one over the limit
-
-    const allowed = await checkRateLimit('user:abc:draft', 5, 60)
-
-    expect(allowed).toBe(false)
-  })
-
-  it('should call redis.eval with the rate-limit Lua script', async () => {
-    mockEval.mockResolvedValue(1)
-
+  it('calls ratelimit.limit with the provided key', async () => {
+    mockLimit.mockResolvedValue({ success: true })
     await checkRateLimit('mykey', 10, 120)
-
-    expect(mockEval).toHaveBeenCalledOnce()
-    const [script, keys, args] = mockEval.mock.calls[0]
-    expect(typeof script).toBe('string')
-    expect(script).toContain('INCR')
-    expect(keys).toEqual(['mykey'])
-    expect(args).toEqual(['120'])
+    expect(mockLimit).toHaveBeenCalledOnce()
+    expect(mockLimit).toHaveBeenCalledWith('mykey')
   })
 
-  it('should pass windowSeconds as a string argument to eval', async () => {
-    mockEval.mockResolvedValue(1)
-
-    await checkRateLimit('somekey', 3, 300)
-
-    const args = mockEval.mock.calls[0][2]
-    expect(args).toEqual(['300'])
+  it('configures sliding window with correct maxCount and window string', async () => {
+    mockLimit.mockResolvedValue({ success: true })
+    await checkRateLimit('key', 3, 300)
+    expect(mockSlidingWindow).toHaveBeenCalledWith(3, '300 s')
   })
 
-  it('should return false (fail closed) when redis.eval throws', async () => {
-    mockEval.mockRejectedValue(new Error('Redis connection failed'))
-
-    const allowed = await checkRateLimit('key', 5, 60)
-    expect(allowed).toBe(false)
+  it('returns false (fail closed) when ratelimit.limit throws', async () => {
+    mockLimit.mockRejectedValue(new Error('Redis connection failed'))
+    expect(await checkRateLimit('key', 5, 60)).toBe(false)
   })
 
-  it('should treat count of 0 as allowed (below limit)', async () => {
-    mockEval.mockResolvedValue(0)
+  it('handles monthly windows (31 days) correctly', async () => {
+    mockLimit.mockResolvedValue({ success: true })
+    await checkRateLimit('drafts:abc:2026-01', 3, 31 * 24 * 3600)
+    expect(mockSlidingWindow).toHaveBeenCalledWith(3, `${31 * 24 * 3600} s`)
+  })
 
-    const allowed = await checkRateLimit('key', 5, 60)
-
-    expect(allowed).toBe(true)
+  it('handles 24-hour windows correctly', async () => {
+    mockLimit.mockResolvedValue({ success: false })
+    expect(await checkRateLimit('insights:abc', 1, 86400)).toBe(false)
+    expect(mockSlidingWindow).toHaveBeenCalledWith(1, '86400 s')
   })
 })
