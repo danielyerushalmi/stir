@@ -38,7 +38,7 @@ export async function GET(req: Request) {
 
   if (!code || !state) return NextResponse.redirect(fallback)
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const savedNonce = cookieStore.get('google_oauth_nonce')?.value
 
   let parsedState: { nonce: string; returnTo: string; userId?: string }

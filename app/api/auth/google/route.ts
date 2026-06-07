@@ -30,7 +30,7 @@ export async function GET(req: Request) {
   const nonce = crypto.randomBytes(16).toString('hex')
   const state = Buffer.from(JSON.stringify({ nonce, returnTo, userId })).toString('base64url')
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   cookieStore.set('google_oauth_nonce', nonce, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

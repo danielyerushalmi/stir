@@ -7,8 +7,9 @@ import { checkRateLimit } from '@/lib/redis'
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params
   const ctx = await requireRestaurant()
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
@@ -35,12 +36,12 @@ export async function PUT(
     return NextResponse.json({ error: 'Sample text exceeds maximum length (1000 characters)' }, { status: 400 })
 
   const existing = await db.voiceSample.findFirst({
-    where: { id: params.id, restaurantId: restaurant.id },
+    where: { id, restaurantId: restaurant.id },
   })
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const sample = await db.voiceSample.update({
-    where: { id: params.id },
+    where: { id },
     data: { reviewType, sampleReview, ownerResponse },
   })
 
@@ -49,8 +50,9 @@ export async function PUT(
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params
   const ctx = await requireRestaurant()
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
@@ -59,11 +61,11 @@ export async function DELETE(
   if (!allowedDelete) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
 
   const existing = await db.voiceSample.findFirst({
-    where: { id: params.id, restaurantId: restaurant.id },
+    where: { id, restaurantId: restaurant.id },
   })
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  await db.voiceSample.delete({ where: { id: params.id } })
+  await db.voiceSample.delete({ where: { id } })
 
   return NextResponse.json({ ok: true })
 }

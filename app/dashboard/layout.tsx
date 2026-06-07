@@ -5,8 +5,8 @@ import { MobileNav } from '@/components/dashboard/MobileNav'
 import { PageTransition } from '@/components/dashboard/PageTransition'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { userId } = auth()
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { userId } = await auth()
   if (!userId) redirect('/sign-in')
   return (
     <div className="flex min-h-screen">
