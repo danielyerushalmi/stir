@@ -10,9 +10,10 @@ import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner'
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { upgrade?: string }
+  searchParams: Promise<{ upgrade?: string }>
 }) {
-  const { userId } = auth()
+  const { upgrade } = await searchParams
+  const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
   const user = await getOrCreateDbUser()
@@ -69,8 +70,8 @@ export default async function DashboardPage({
         </div>
       )}
 
-      {searchParams.upgrade && (
-        <UpgradeBanner planName={searchParams.upgrade} />
+      {upgrade && (
+        <UpgradeBanner planName={upgrade} />
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

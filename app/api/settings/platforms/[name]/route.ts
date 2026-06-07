@@ -7,8 +7,9 @@ import { checkRateLimit } from '@/lib/redis'
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { name: string } },
+  { params }: { params: Promise<{ name: string }> },
 ) {
+  const { name } = await params
   const ctx = await requireRestaurant()
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
@@ -16,14 +17,14 @@ export async function DELETE(
   const allowed = await checkRateLimit(`settings:platforms:disconnect:${restaurant.id}`, 10, 60)
   if (!allowed) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
 
-  if (!VALID_PLATFORMS.includes(params.name as typeof VALID_PLATFORMS[number])) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
+  if (!VALID_PLATFORMS.includes(name as typeof VALID_PLATFORMS[number])) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
 
   await db.platform.updateMany({
-    where: { restaurantId: restaurant.id, name: params.name },
+    where: { restaurantId: restaurant.id, name },
     data: { isConnected: false, accessToken: null, refreshToken: null, tokenExpiresAt: null },
   })
 
-  if (params.name === 'YELP') {
+  if (name === 'YELP') {
     await Promise.all([
       db.restaurant.update({
         where: { id: restaurant.id },

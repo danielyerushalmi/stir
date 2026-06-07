@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider afterSignInUrl="/dashboard" afterSignUpUrl="/onboarding">
+    <ClerkProvider signInFallbackRedirectUrl="/dashboard" signUpFallbackRedirectUrl="/onboarding">
       <html lang="en">
         <body className={`${figtree.variable} ${figtree.className}`}>{children}</body>
       </html>

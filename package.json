@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",
-    "@clerk/nextjs": "^5.7.6",
+    "@clerk/nextjs": "^7.4.3",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@upstash/ratelimit": "^2.0.8",
@@ -21,22 +21,23 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "googleapis": "^171.4.0",
-    "next": "14.2.35",
+    "next": "^16.2.7",
     "pg": "^8.20.0",
-    "react": "^18",
-    "react-dom": "^18",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "tailwind-merge": "^3.6.0"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "dotenv": "^17.4.2",
     "eslint": "^8",

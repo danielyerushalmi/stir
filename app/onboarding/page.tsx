@@ -6,7 +6,7 @@ import { db } from '@/lib/db'
 import { getOrCreateDbUser } from '@/lib/user'
 
 export default async function OnboardingIndex() {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
   const user = await getOrCreateDbUser()
