@@ -6,7 +6,7 @@ import { db } from '@/lib/db'
 import { getOrCreateDbUser } from '@/lib/user'
 
 export async function POST(req: Request) {
-  const { userId } = auth()
+  const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const user = await getOrCreateDbUser()

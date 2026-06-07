@@ -69,10 +69,11 @@ describe('checkRateLimit', () => {
     expect(args).toEqual(['300'])
   })
 
-  it('should propagate errors thrown by redis.eval', async () => {
+  it('should return false (fail closed) when redis.eval throws', async () => {
     mockEval.mockRejectedValue(new Error('Redis connection failed'))
 
-    await expect(checkRateLimit('key', 5, 60)).rejects.toThrow('Redis connection failed')
+    const allowed = await checkRateLimit('key', 5, 60)
+    expect(allowed).toBe(false)
   })
 
   it('should treat count of 0 as allowed (below limit)', async () => {
