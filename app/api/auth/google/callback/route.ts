@@ -5,7 +5,8 @@ import { auth } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
 import { getOrCreateDbUser } from '@/lib/user'
-import { exchangeCodeForTokens, buildClientFromTokens, fetchGoogleLocationNames } from '@/lib/google'
+import { exchangeCodeForTokens, buildClientFromTokens, fetchGoogleLocationNames, encryptToken } from '@/lib/google'
+import { checkRateLimit } from '@/lib/redis'
 
 function sanitizeReturnTo(raw: string | null | undefined): string {
   if (!raw) return '/dashboard'
@@ -20,6 +21,9 @@ function sanitizeReturnTo(raw: string | null | undefined): string {
 export async function GET(req: Request) {
   const { userId } = await auth()
   if (!userId) return NextResponse.redirect(new URL('/sign-in', req.url))
+
+  const allowed = await checkRateLimit(`auth:google:callback:${userId}`, 20, 60)
+  if (!allowed) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
 
   const url = new URL(req.url)
   const code = url.searchParams.get('code')
@@ -74,13 +78,16 @@ export async function GET(req: Request) {
     // Use first location (MVP — multi-location picker can be added later)
     const locationName = locationNames[0]
 
+    const encryptedAccess = encryptToken(tokens.access_token)
+    const encryptedRefresh = encryptToken(tokens.refresh_token)
+
     await db.platform.upsert({
       where: { restaurantId_name: { restaurantId: restaurant.id, name: 'GOOGLE' } },
       update: {
         isConnected: true,
         externalId: locationName,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
+        accessToken: encryptedAccess,
+        refreshToken: encryptedRefresh,
         tokenExpiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
       },
       create: {
@@ -88,8 +95,8 @@ export async function GET(req: Request) {
         name: 'GOOGLE',
         isConnected: true,
         externalId: locationName,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
+        accessToken: encryptedAccess,
+        refreshToken: encryptedRefresh,
         tokenExpiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
       },
     })

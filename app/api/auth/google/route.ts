@@ -5,6 +5,7 @@ import { auth } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
 import { getGoogleOAuthUrl } from '@/lib/google'
 import crypto from 'crypto'
+import { checkRateLimit } from '@/lib/redis'
 
 function sanitizeReturnTo(raw: string | null): string {
   if (!raw) return '/dashboard'
@@ -19,6 +20,9 @@ function sanitizeReturnTo(raw: string | null): string {
 export async function GET(req: Request) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const allowed = await checkRateLimit(`auth:google:${userId}`, 10, 60)
+  if (!allowed) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
 
   const url = new URL(req.url)
   const returnTo = sanitizeReturnTo(url.searchParams.get('returnTo')) || '/dashboard/settings?tab=platforms'

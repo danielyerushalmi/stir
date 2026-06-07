@@ -3,11 +3,15 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
 import { getReviews, YelpApiError } from '@/lib/yelp'
+import { checkRateLimit } from '@/lib/redis'
 
 export async function GET() {
   const ctx = await requireRestaurant()
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
+
+  const allowed = await checkRateLimit(`yelp:reviews:${restaurant.id}`, 5, 60)
+  if (!allowed) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
 
   const fullRestaurant = await db.restaurant.findUnique({ where: { id: restaurant.id }, select: { yelpBusinessId: true } })
   if (!fullRestaurant?.yelpBusinessId) {

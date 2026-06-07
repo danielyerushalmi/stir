@@ -4,11 +4,15 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
 import { VALID_REVIEW_TYPES } from '@/types'
+import { checkRateLimit } from '@/lib/redis'
 
 export async function POST(req: Request) {
   const ctx = await requireRestaurant()
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
+
+  const allowed = await checkRateLimit(`onboarding:voice:${restaurant.id}`, 20, 60)
+  if (!allowed) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
 
   let reviewType: unknown, sampleReview: unknown, ownerResponse: unknown
   try {

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
 import { VALID_REVIEW_TYPES } from '@/types'
+import { checkRateLimit } from '@/lib/redis'
 
 export async function PUT(
   req: Request,
@@ -11,6 +12,9 @@ export async function PUT(
   const ctx = await requireRestaurant()
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
+
+  const allowed = await checkRateLimit(`settings:voice:${restaurant.id}`, 20, 60)
+  if (!allowed) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
 
   let reviewType: unknown, sampleReview: unknown, ownerResponse: unknown
   try {
@@ -50,6 +54,9 @@ export async function DELETE(
   const ctx = await requireRestaurant()
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
+
+  const allowedDelete = await checkRateLimit(`settings:voice:${restaurant.id}`, 20, 60)
+  if (!allowedDelete) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
 
   const existing = await db.voiceSample.findFirst({
     where: { id: params.id, restaurantId: restaurant.id },
