@@ -79,7 +79,11 @@ export async function POST() {
     })
 
     if (newCount > 0) {
-      generateInsights(restaurant.id).catch(err => console.error('Auto-insights error:', err))
+      // Share the same rate-limit key as /api/ai/insights so both paths draw from one 24h budget.
+      const insightsAllowed = await checkRateLimit(`insights:${restaurant.id}`, 1, 24 * 3600)
+      if (insightsAllowed) {
+        generateInsights(restaurant.id).catch(err => console.error('Auto-insights error:', err))
+      }
     }
 
     return NextResponse.json({ synced: newCount, updated: updatedCount })

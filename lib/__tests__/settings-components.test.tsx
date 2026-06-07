@@ -12,11 +12,11 @@ describe('Toast', () => {
     expect(screen.getByText('Changes saved')).toBeTruthy()
   })
 
-  it('calls onDismiss after 3 seconds', () => {
+  it('calls onDismiss after 4 seconds', () => {
     const onDismiss = vi.fn()
     render(<Toast message="ok" type="success" onDismiss={onDismiss} />)
     expect(onDismiss).not.toHaveBeenCalled()
-    act(() => { vi.advanceTimersByTime(3000) })
+    act(() => { vi.advanceTimersByTime(4000) })
     expect(onDismiss).toHaveBeenCalledOnce()
   })
 

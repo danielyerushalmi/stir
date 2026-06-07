@@ -50,4 +50,6 @@ next-env.d.ts
 .swarm/
 .playwright-mcp/
 ruvector.db
+agentdb.rvf
+agentdb.rvf.lock
 skills-lock.json
