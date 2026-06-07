@@ -3,11 +3,15 @@ import { NextResponse } from 'next/server'
 import { clerkClient } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
+import { checkRateLimit } from '@/lib/redis'
 
 export async function DELETE() {
   const ctx = await requireRestaurant()
   if (!ctx.ok) return ctx.response
-  const { user } = ctx
+  const { user, restaurant } = ctx
+
+  const allowed = await checkRateLimit(`account:delete:${restaurant.id}`, 3, 3600)
+  if (!allowed) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
 
   try {
     await db.user.delete({ where: { id: user.id } })

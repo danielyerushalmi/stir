@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
 import { generateDraft } from '@/lib/ai'
 import { checkRateLimit } from '@/lib/redis'
+import { getPlanLimits } from '@/lib/limits'
 
 export async function POST(req: Request) {
   const ctx = await requireRestaurant()
@@ -26,10 +27,16 @@ export async function POST(req: Request) {
   if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
 
   const plan = restaurantWithSub.subscription?.plan ?? 'FREE'
-  if (plan === 'FREE') {
-    const month = new Date().toISOString().slice(0, 7)
-    const allowed = await checkRateLimit(`drafts:${restaurant.id}:${month}`, 3, 31 * 24 * 3600)
-    if (!allowed) return NextResponse.json({ error: 'UPGRADE_REQUIRED', message: 'Free plan: 3 AI drafts per month. Upgrade to continue.' }, { status: 402 })
+  const limits = getPlanLimits(plan)
+  const month = new Date().toISOString().slice(0, 7)
+  const allowed = await checkRateLimit(`drafts:${restaurant.id}:${month}`, limits.draftsPerMonth, 31 * 24 * 3600)
+  if (!allowed) {
+    return NextResponse.json({
+      error: plan === 'FREE' ? 'UPGRADE_REQUIRED' : 'RATE_LIMITED',
+      message: plan === 'FREE'
+        ? `Free plan: ${limits.draftsPerMonth} AI drafts/month. Upgrade to continue.`
+        : `Plan limit reached: ${limits.draftsPerMonth} AI drafts/month.`,
+    }, { status: plan === 'FREE' ? 402 : 429 })
   }
 
   try {

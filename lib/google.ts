@@ -2,6 +2,9 @@ import { google } from 'googleapis'
 import type { OAuth2Client } from 'google-auth-library'
 import { db } from '@/lib/db'
 import type { Platform } from '@prisma/client'
+import { encryptToken, decryptToken } from '@/lib/crypto'
+
+export { encryptToken, decryptToken }
 
 export class GoogleDisconnectedError extends Error {
   constructor() {
@@ -64,8 +67,8 @@ export function buildClientFromTokens(tokens: {
 export async function getOAuthClient(platform: Platform): Promise<OAuth2Client> {
   const client = createBaseClient()
   client.setCredentials({
-    access_token: platform.accessToken ?? undefined,
-    refresh_token: platform.refreshToken ?? undefined,
+    access_token: platform.accessToken ? decryptToken(platform.accessToken) : undefined,
+    refresh_token: platform.refreshToken ? decryptToken(platform.refreshToken) : undefined,
     expiry_date: platform.tokenExpiresAt?.getTime() ?? undefined,
   })
 
@@ -78,7 +81,7 @@ export async function getOAuthClient(platform: Platform): Promise<OAuth2Client> 
       await db.platform.update({
         where: { id: platform.id },
         data: {
-          accessToken: credentials.access_token ?? undefined,
+          accessToken: credentials.access_token ? encryptToken(credentials.access_token) : undefined,
           tokenExpiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : undefined,
         },
       })

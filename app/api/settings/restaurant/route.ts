@@ -2,11 +2,15 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
+import { checkRateLimit } from '@/lib/redis'
 
 export async function PUT(req: Request) {
   const ctx = await requireRestaurant()
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
+
+  const allowed = await checkRateLimit(`settings:restaurant:${restaurant.id}`, 20, 60)
+  if (!allowed) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
 
   let name: unknown, cuisineType: unknown, city: unknown, vibe: unknown
   try {

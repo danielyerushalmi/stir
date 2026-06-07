@@ -3,14 +3,19 @@ import { db } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
 import { generateInsights } from '@/lib/ai'
 import { checkRateLimit } from '@/lib/redis'
+import { getPlanLimits } from '@/lib/limits'
 
 export async function POST() {
   const ctx = await requireRestaurant()
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
 
-  const allowed = await checkRateLimit(`insights:${restaurant.id}`, 1, 24 * 3600)
-  if (!allowed) return NextResponse.json({ error: 'Rate limited. Try again in 24 hours.' }, { status: 429 })
+  const restaurantWithSub = await db.restaurant.findUnique({ where: { id: restaurant.id }, include: { subscription: true } })
+  const plan = restaurantWithSub?.subscription?.plan ?? 'FREE'
+  const limits = getPlanLimits(plan)
+
+  const allowed = await checkRateLimit(`insights:${restaurant.id}`, limits.insightsPer24h, 24 * 3600)
+  if (!allowed) return NextResponse.json({ error: 'Rate limited. Try again later.' }, { status: 429 })
 
   try {
     await generateInsights(restaurant.id)

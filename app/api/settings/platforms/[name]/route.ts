@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
 import { VALID_PLATFORMS } from '@/types'
+import { checkRateLimit } from '@/lib/redis'
 
 export async function DELETE(
   _req: Request,
@@ -11,6 +12,9 @@ export async function DELETE(
   const ctx = await requireRestaurant()
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
+
+  const allowed = await checkRateLimit(`settings:platforms:disconnect:${restaurant.id}`, 10, 60)
+  if (!allowed) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
 
   if (!VALID_PLATFORMS.includes(params.name as typeof VALID_PLATFORMS[number])) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
 
