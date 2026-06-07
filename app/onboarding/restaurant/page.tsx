@@ -30,6 +30,7 @@ export default function RestaurantStep() {
     setLoading(true)
     const res = await fetch('/api/onboarding/restaurant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
     if (res.ok) router.push('/onboarding/connect')
+    else if (res.status === 429) setErrors({ submit: 'Too many attempts — please wait a minute and try again.' })
     else setErrors({ submit: 'Something went wrong. Try again.' })
     setLoading(false)
   }
