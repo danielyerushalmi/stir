@@ -28,8 +28,7 @@ export async function POST(req: Request) {
 
   const plan = restaurantWithSub.subscription?.plan ?? 'FREE'
   const limits = getPlanLimits(plan)
-  const month = new Date().toISOString().slice(0, 7)
-  const allowed = await checkRateLimit(`drafts:${restaurant.id}:${month}`, limits.draftsPerMonth, 31 * 24 * 3600)
+  const allowed = await checkRateLimit(`drafts:${restaurant.id}`, limits.draftsPerMonth, 30 * 24 * 3600, { failOpen: false })
   if (!allowed) {
     return NextResponse.json({
       error: plan === 'FREE' ? 'UPGRADE_REQUIRED' : 'RATE_LIMITED',

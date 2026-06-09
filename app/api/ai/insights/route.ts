@@ -14,7 +14,7 @@ export async function POST() {
   const plan = restaurantWithSub?.subscription?.plan ?? 'FREE'
   const limits = getPlanLimits(plan)
 
-  const allowed = await checkRateLimit(`insights:${restaurant.id}`, limits.insightsPer24h, 24 * 3600)
+  const allowed = await checkRateLimit(`insights:${restaurant.id}`, limits.insightsPer24h, 24 * 3600, { failOpen: false })
   if (!allowed) return NextResponse.json({ error: 'Rate limited. Try again later.' }, { status: 429 })
 
   try {

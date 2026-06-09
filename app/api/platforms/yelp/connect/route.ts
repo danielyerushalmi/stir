@@ -88,8 +88,8 @@ export async function POST(req: Request) {
     if (toUpdate.length > 0) {
       await rlsTransaction(async (tx) => {
         for (const r of toUpdate) {
-          await tx.review.update({
-            where: { platform_externalId: { platform: 'YELP', externalId: r.externalId } },
+          await tx.review.updateMany({
+            where: { restaurantId: restaurant.id, platform: 'YELP', externalId: r.externalId },
             data: { rating: r.rating, reviewText: r.reviewText, authorName: r.authorName },
           })
         }

@@ -63,13 +63,23 @@ function setConfig(tx: Pick<PrismaClient, '$executeRaw'>, clerkId: string) {
 export const db = base.$extends({
   query: {
     $allModels: {
-      async $allOperations({ args, query }) {
+      async $allOperations({ model, operation, args, query }) {
         const clerkId = RLS_ENFORCED ? await resolveClerkId() : undefined
         // No context (or RLS disabled): run normally. When RLS is enforced and no
         // context is set, the DB policies deny by default — fail closed.
         if (!clerkId) return query(args)
-        const [, result] = await base.$transaction([setConfig(base, clerkId), query(args)])
-        return result
+        // Interactive-callback transaction so set_config and the operation provably
+        // share ONE connection/transaction: set_config(..., true) is transaction-local,
+        // so it must run on the same `tx` client the query runs on or the GUC desyncs
+        // under pooling. The $allOperations `query` callback can't be re-targeted onto
+        // `tx`, so we re-dispatch the operation directly on `tx`. Prisma exposes `model`
+        // as the PascalCase schema name; the client property is camelCase.
+        return base.$transaction(async (tx) => {
+          await setConfig(tx, clerkId)
+          const delegate = model[0].toLowerCase() + model.slice(1)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return (tx as any)[delegate][operation](args)
+        })
       },
     },
   },

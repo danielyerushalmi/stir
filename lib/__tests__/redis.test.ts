@@ -46,9 +46,14 @@ describe('checkRateLimit', () => {
     expect(mockSlidingWindow).toHaveBeenCalledWith(3, '300 s')
   })
 
-  it('returns false (fail closed) when ratelimit.limit throws', async () => {
+  it('fails OPEN by default when ratelimit.limit throws (Redis outage must not 429 every write path)', async () => {
     mockLimit.mockRejectedValue(new Error('Redis connection failed'))
-    expect(await checkRateLimit('key', 5, 60)).toBe(false)
+    expect(await checkRateLimit('key', 5, 60)).toBe(true)
+  })
+
+  it('fails CLOSED when ratelimit.limit throws and { failOpen: false } is passed (abuse-sensitive routes)', async () => {
+    mockLimit.mockRejectedValue(new Error('Redis connection failed'))
+    expect(await checkRateLimit('key', 5, 60, { failOpen: false })).toBe(false)
   })
 
   it('handles monthly windows (31 days) correctly', async () => {

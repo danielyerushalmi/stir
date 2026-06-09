@@ -36,6 +36,7 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss,
   const [showTyping, setShowTyping] = useState(true)
   const [showConfirm, setShowConfirm] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [copyFailed, setCopyFailed] = useState(false)
 
   useEffect(() => {
     setText(draft)
@@ -141,12 +142,22 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss,
                     disabled={loading !== null}
                     title="Yelp doesn't allow third-party posting — copy this and paste it into Yelp directly."
                     onClick={async () => {
-                      await navigator.clipboard.writeText(text)
-                      setCopied(true)
-                      setTimeout(() => setCopied(false), 2000)
+                      if (!navigator.clipboard?.writeText) {
+                        setCopyFailed(true)
+                        setTimeout(() => setCopyFailed(false), 2000)
+                        return
+                      }
+                      try {
+                        await navigator.clipboard.writeText(text)
+                        setCopied(true)
+                        setTimeout(() => setCopied(false), 2000)
+                      } catch {
+                        setCopyFailed(true)
+                        setTimeout(() => setCopyFailed(false), 2000)
+                      }
                     }}
                   >
-                    {copied ? 'Copied!' : 'Copy to clipboard'}
+                    {copied ? 'Copied!' : copyFailed ? 'Copy failed — select & copy' : 'Copy to clipboard'}
                   </Button>
                 ) : (
                   <Button
