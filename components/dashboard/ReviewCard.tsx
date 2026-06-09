@@ -45,9 +45,10 @@ interface ReviewCardProps {
     response?: { id: string; draftText: string; status: string } | null
   }
   onDraftRequest: (reviewId: string) => void
+  drafting?: boolean
 }
 
-export function ReviewCard({ review, onDraftRequest }: ReviewCardProps) {
+export function ReviewCard({ review, onDraftRequest, drafting = false }: ReviewCardProps) {
   const [expanded, setExpanded] = useState(false)
   const platform = PLATFORM_STYLES[review.platform] ?? { bg: 'bg-border', text: 'text-text-muted', label: review.platform }
   const date = new Date(review.reviewDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -88,9 +89,11 @@ export function ReviewCard({ review, onDraftRequest }: ReviewCardProps) {
             {review.response.status === 'POSTED' ? 'Replied' : 'Draft ready'}
           </Badge>
         ) : (
-          <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.15 }}>
-            <Button size="sm" onClick={() => onDraftRequest(review.id)}>
-              {review.platform === 'YELP' ? 'Copy AI Response →' : 'Draft reply →'}
+          <motion.div whileHover={drafting ? undefined : { x: 2 }} transition={{ duration: 0.15 }}>
+            <Button size="sm" onClick={() => onDraftRequest(review.id)} disabled={drafting}>
+              {drafting
+                ? 'Drafting…'
+                : review.platform === 'YELP' ? 'Copy AI Response →' : 'Draft reply →'}
             </Button>
           </motion.div>
         )}

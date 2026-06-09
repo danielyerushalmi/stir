@@ -83,13 +83,20 @@ export async function getOAuthClient(platform: Platform): Promise<OAuth2Client> 
         data: {
           accessToken: credentials.access_token ? encryptToken(credentials.access_token) : undefined,
           tokenExpiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : undefined,
+          // Google may rotate the refresh_token on refresh. If a new one is
+          // returned it MUST be persisted (encrypted), or the next refresh
+          // fails and the account force-disconnects.
+          ...(credentials.refresh_token
+            ? { refreshToken: encryptToken(credentials.refresh_token) }
+            : {}),
         },
       })
       client.setCredentials(credentials)
     } catch {
+      // Clear stored tokens so stale/invalid credentials aren't left behind.
       await db.platform.update({
         where: { id: platform.id },
-        data: { isConnected: false },
+        data: { isConnected: false, accessToken: null, refreshToken: null, tokenExpiresAt: null },
       })
       throw new GoogleDisconnectedError()
     }
@@ -132,36 +139,49 @@ export type GoogleReview = {
 }
 
 export async function fetchGoogleReviews(client: OAuth2Client, locationName: string): Promise<GoogleReview[]> {
+  const MAX_PAGES = 20
   const reviews: GoogleReview[] = []
   let pageToken: string | undefined
+  let pages = 0
 
-  do {
-    const url = `https://mybusiness.googleapis.com/v4/${locationName}/reviews?pageSize=50${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`
-    const res = await client.request<{
-      reviews?: Array<{
-        reviewId: string
-        starRating: string
-        comment?: string
-        reviewer?: { displayName?: string }
-        createTime: string
-        reviewReply?: { comment: string }
-      }>
-      nextPageToken?: string
-    }>({ url })
+  // Overall timeout so a hung upstream can't stall the serverless invocation
+  // indefinitely (mirrors lib/ai.ts). The signal is passed to each page fetch.
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 25_000)
+  try {
+    do {
+      if (pages >= MAX_PAGES) break
+      pages++
 
-    for (const r of res.data.reviews ?? []) {
-      if (!r.reviewId) continue
-      reviews.push({
-        externalId: r.reviewId,
-        rating: starRatingToNumber(r.starRating),
-        reviewText: r.comment ?? '',
-        authorName: r.reviewer?.displayName ?? 'Anonymous',
-        reviewDate: new Date(r.createTime),
-        hasReply: !!r.reviewReply,
-      })
-    }
-    pageToken = res.data.nextPageToken
-  } while (pageToken)
+      const url = `https://mybusiness.googleapis.com/v4/${locationName}/reviews?pageSize=50${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`
+      const res = await client.request<{
+        reviews?: Array<{
+          reviewId: string
+          starRating: string
+          comment?: string
+          reviewer?: { displayName?: string }
+          createTime: string
+          reviewReply?: { comment: string }
+        }>
+        nextPageToken?: string
+      }>({ url, signal: controller.signal })
+
+      for (const r of res.data.reviews ?? []) {
+        if (!r.reviewId) continue
+        reviews.push({
+          externalId: r.reviewId,
+          rating: starRatingToNumber(r.starRating),
+          reviewText: r.comment ?? '',
+          authorName: r.reviewer?.displayName ?? 'Anonymous',
+          reviewDate: new Date(r.createTime),
+          hasReply: !!r.reviewReply,
+        })
+      }
+      pageToken = res.data.nextPageToken
+    } while (pageToken)
+  } finally {
+    clearTimeout(timer)
+  }
 
   return reviews
 }

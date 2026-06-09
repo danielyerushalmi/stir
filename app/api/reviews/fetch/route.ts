@@ -12,7 +12,7 @@ export async function POST() {
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
 
-  const allowed = await checkRateLimit(`reviews:fetch:${restaurant.id}`, 1, 600)
+  const allowed = await checkRateLimit(`reviews:fetch:${restaurant.id}`, 1, 600, { failOpen: false })
   if (!allowed) return NextResponse.json({ error: 'Rate limited. Try again in 10 minutes.' }, { status: 429 })
 
   const googlePlatform = await db.platform.findUnique({
@@ -62,8 +62,8 @@ export async function POST() {
     if (toUpdate.length > 0) {
       await rlsTransaction(async (tx) => {
         for (const r of toUpdate) {
-          await tx.review.update({
-            where: { platform_externalId: { platform: 'GOOGLE', externalId: r.externalId } },
+          await tx.review.updateMany({
+            where: { restaurantId: restaurant.id, platform: 'GOOGLE', externalId: r.externalId },
             data: { rating: r.rating, reviewText: r.reviewText, authorName: r.authorName },
           })
         }
@@ -80,7 +80,7 @@ export async function POST() {
 
     if (newCount > 0) {
       // Share the same rate-limit key as /api/ai/insights so both paths draw from one 24h budget.
-      const insightsAllowed = await checkRateLimit(`insights:${restaurant.id}`, 1, 24 * 3600)
+      const insightsAllowed = await checkRateLimit(`insights:${restaurant.id}`, 1, 24 * 3600, { failOpen: false })
       if (insightsAllowed) {
         generateInsights(restaurant.id).catch(err => console.error('Auto-insights error:', err))
       }
