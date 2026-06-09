@@ -20,6 +20,7 @@ export default function ConnectStep() {
   const router = useRouter()
   const [connected, setConnected] = useState<Set<string>>(new Set())
   const [inputs, setInputs] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -43,14 +44,33 @@ export default function ConnectStep() {
   }
 
   async function connectManual(platformId: string, externalId?: string) {
-    await fetch('/api/onboarding/connect', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ platform: platformId, externalId }),
-    })
-    setConnected(prev => new Set(prev).add(platformId))
+    setError('')
+    setSaving(prev => new Set(prev).add(platformId))
+    try {
+      const res = await fetch('/api/onboarding/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform: platformId, externalId }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error ?? `Could not connect ${platformId}. Please check the URL and try again.`)
+        return
+      }
+      setConnected(prev => new Set(prev).add(platformId))
+    } catch {
+      setError(`Could not connect ${platformId}. Please try again.`)
+    } finally {
+      setSaving(prev => {
+        const next = new Set(prev)
+        next.delete(platformId)
+        return next
+      })
+    }
   }
 
+  // Primary "Continue" path requires Google. "Skip for now" is a deliberate
+  // escape hatch (below) that bypasses this gate without marking anything connected.
   async function handleContinue() {
     if (!connected.has('GOOGLE')) { setError('Please connect Google to continue.'); return }
     setLoading(true)
@@ -77,7 +97,7 @@ export default function ConnectStep() {
               )}
             >
               <div className="flex items-center gap-3">
-                <span className="text-xl">{p.icon}</span>
+                <span className="text-xl" aria-hidden="true">{p.icon}</span>
                 <span className="font-medium text-charcoal text-sm">{p.label}</span>
                 {p.required && <Badge variant="orange">Required</Badge>}
                 {p.comingSoon && <Badge variant="gray">Coming soon</Badge>}
@@ -95,7 +115,9 @@ export default function ConnectStep() {
                           value={inputs[p.id] || ''}
                           onChange={e => setInputs(prev => ({ ...prev, [p.id]: e.target.value }))}
                         />
-                        <Button size="sm" onClick={() => connectManual(p.id, inputs[p.id])}>Save</Button>
+                        <Button size="sm" onClick={() => connectManual(p.id, inputs[p.id])} disabled={saving.has(p.id)}>
+                          {saving.has(p.id) ? 'Saving...' : 'Save'}
+                        </Button>
                       </div>
               )}
             </div>

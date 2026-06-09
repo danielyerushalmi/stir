@@ -122,7 +122,7 @@ export default function InsightsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <span aria-hidden="true" className="text-base">{TYPE_VISUAL[insight.type]?.icon}</span>
-                    <Badge variant={TYPE_META[insight.type].variant}>{TYPE_META[insight.type].label}</Badge>
+                    <Badge variant={TYPE_META[insight.type]?.variant ?? 'orange'}>{TYPE_META[insight.type]?.label ?? insight.type}</Badge>
                     <span className="text-xs text-text-lighter">
                       {insight.reviewCount} reviews · {insight.platforms.join(', ')}
                     </span>

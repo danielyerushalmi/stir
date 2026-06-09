@@ -1,4 +1,3 @@
-export type Platform = 'GOOGLE' | 'YELP' | 'TRIPADVISOR' | 'DOORDASH' | 'UBEREATS' | 'GRUBHUB'
 export type ReviewStatus = 'DRAFT' | 'APPROVED' | 'POSTED' | 'DISMISSED'
 export type InsightType = 'ALERT' | 'TIP' | 'DELIVERY_GAP'
 export type Plan = 'FREE' | 'STARTER' | 'GROWTH' | 'AGENCY'
@@ -16,7 +15,9 @@ export interface ScoreResult {
   deliveryScore: number | null
 }
 
+// Single source of truth for platform names. Derive all platform types from this.
 export const VALID_PLATFORMS = ['GOOGLE', 'YELP', 'TRIPADVISOR', 'FACEBOOK', 'DOORDASH', 'UBEREATS', 'GRUBHUB'] as const
+export type Platform = typeof VALID_PLATFORMS[number]
 export type PlatformName = typeof VALID_PLATFORMS[number]
 
 export const VALID_REVIEW_TYPES = ['positive_5star', 'wait_complaint', 'price_complaint', 'food_complaint', 'service_complaint', 'mixed'] as const

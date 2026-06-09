@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
+import { VALID_PLATFORMS } from '@/types'
 import { checkRateLimit } from '@/lib/redis'
 
 export async function GET(req: Request) {
@@ -14,8 +15,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url)
   const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1') || 1)
   const platform = url.searchParams.get('platform') || undefined
-  const ALLOWED_PLATFORMS = ['GOOGLE', 'YELP', 'TRIPADVISOR', 'FACEBOOK', 'DOORDASH', 'UBEREATS', 'GRUBHUB']
-  if (platform && !ALLOWED_PLATFORMS.includes(platform)) {
+  if (platform && !VALID_PLATFORMS.includes(platform as typeof VALID_PLATFORMS[number])) {
     return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
   }
   const parsedRating = url.searchParams.get('rating') ? parseInt(url.searchParams.get('rating')!) : undefined

@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { db, rlsTransaction } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
 import { checkRateLimit } from '@/lib/redis'
@@ -30,16 +30,25 @@ export async function POST() {
     const client = await getOAuthClient(googlePlatform)
     const googleReviews = await fetchGoogleReviews(client, googlePlatform.externalId)
 
-    const existingIds = new Set(
+    const existing = new Map(
       (await db.review.findMany({
         where: { restaurantId: restaurant.id, platform: 'GOOGLE' },
-        select: { externalId: true },
-      })).map(r => r.externalId),
+        select: { externalId: true, rating: true, reviewText: true, authorName: true },
+      })).map(r => [r.externalId, r]),
     )
 
     // Split reviews into new vs existing
-    const toCreate = googleReviews.filter(r => !existingIds.has(r.externalId))
-    const toUpdate = googleReviews.filter(r => existingIds.has(r.externalId))
+    const toCreate = googleReviews.filter(r => !existing.has(r.externalId))
+    // Only update rows whose content actually changed vs the DB.
+    const toUpdate = googleReviews.filter(r => {
+      const prev = existing.get(r.externalId)
+      if (!prev) return false
+      return (
+        prev.rating !== r.rating ||
+        prev.reviewText !== r.reviewText ||
+        prev.authorName !== r.authorName
+      )
+    })
 
     // Batch create
     if (toCreate.length > 0) {
@@ -82,7 +91,9 @@ export async function POST() {
       // Share the same rate-limit key as /api/ai/insights so both paths draw from one 24h budget.
       const insightsAllowed = await checkRateLimit(`insights:${restaurant.id}`, 1, 24 * 3600, { failOpen: false })
       if (insightsAllowed) {
-        generateInsights(restaurant.id).catch(err => console.error('Auto-insights error:', err))
+        // Defer with after() so the work completes even after the response is sent,
+        // instead of risking the serverless instance freezing mid-flight.
+        after(() => generateInsights(restaurant.id).catch(err => console.error('Auto-insights error:', err)))
       }
     }
 
