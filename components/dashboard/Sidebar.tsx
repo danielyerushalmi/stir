@@ -39,7 +39,7 @@ export function Sidebar() {
       <div className="flex items-center justify-between px-4 py-5">
         {!collapsed && <StirLogo variant="white" size="sm" />}
         <button onClick={toggleCollapsed} className="ml-auto rounded p-1 hover:bg-brown-mid/50 text-white/60 hover:text-white transition-colors" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-          {collapsed ? '›' : '‹'}
+          <span aria-hidden="true">{collapsed ? '›' : '‹'}</span>
         </button>
       </div>
       <nav className="flex flex-col gap-1 px-2 flex-1">

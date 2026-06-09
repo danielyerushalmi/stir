@@ -11,7 +11,7 @@ export function NavCtaButton() {
     >
       <Link
         href="/sign-up"
-        className="rounded-lg bg-orange px-4 py-2 text-sm font-medium text-white hover:bg-orange-dark transition-colors"
+        className="rounded-lg bg-orange px-4 py-2 text-sm font-medium text-white hover:bg-orange-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2"
       >
         Start free
       </Link>

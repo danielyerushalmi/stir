@@ -28,14 +28,16 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      <HeroSection />
-      <PlatformStrip />
-      <ProblemSection />
-      <HowItWorksSection />
-      <DemoWidget />
-      <PricingSection />
-      <TestimonialsSection />
-      <CtaSection />
+      <main id="main-content" tabIndex={-1} className="focus:outline-none">
+        <HeroSection />
+        <PlatformStrip />
+        <ProblemSection />
+        <HowItWorksSection />
+        <DemoWidget />
+        <PricingSection />
+        <TestimonialsSection />
+        <CtaSection />
+      </main>
     </div>
   )
 }

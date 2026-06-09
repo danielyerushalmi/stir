@@ -1,5 +1,6 @@
 'use client'
 import { Component, ReactNode } from 'react'
+import { Button } from './Button'
 
 interface Props {
   children: ReactNode
@@ -27,12 +28,9 @@ export class ErrorBoundary extends Component<Props, State> {
           <div>
             <p className="font-medium text-charcoal mb-1">Something went wrong</p>
             <p className="text-sm text-text-muted mb-4">Refresh the page to try again.</p>
-            <button
-              onClick={() => this.setState({ hasError: false })}
-              className="rounded-lg bg-orange px-4 py-2 text-sm font-medium text-white hover:bg-orange-dark transition-colors"
-            >
+            <Button size="sm" onClick={() => this.setState({ hasError: false })}>
               Try again
-            </button>
+            </Button>
           </div>
         </div>
       )

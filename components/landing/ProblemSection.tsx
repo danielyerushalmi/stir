@@ -1,5 +1,6 @@
 'use client'
 import { useRef, useEffect } from 'react'
+import { useReducedMotion } from 'framer-motion'
 import { createTimeline, animate } from 'animejs'
 
 function CountUp({ to }: { to: number }) {
@@ -95,8 +96,10 @@ function DesktopVersion() {
   const panelRefs   = useRef<(HTMLDivElement | null)[]>([])
   const dotRefs     = useRef<(HTMLDivElement | null)[]>([])
   const labelRefs   = useRef<(HTMLSpanElement | null)[]>([])
+  const reducedMotion = useReducedMotion()
 
   useEffect(() => {
+    if (reducedMotion) return
     const container = containerRef.current
     const panels    = panelRefs.current.filter(Boolean) as HTMLDivElement[]
     const dots      = dotRefs.current.filter(Boolean) as HTMLDivElement[]
@@ -152,7 +155,10 @@ function DesktopVersion() {
       cancelAnimationFrame(raf)
       tl.revert()
     }
-  }, [])
+  }, [reducedMotion])
+
+  // Reduced motion: render the flat, fully-visible layout instead of scroll-scrubbed panels
+  if (reducedMotion) return <MobileVersion />
 
   return (
     <section ref={containerRef} className="relative bg-cream-dark" style={{ height: '300vh' }}>
@@ -186,7 +192,7 @@ function DesktopVersion() {
                   <span
                     key={p.id}
                     ref={el => { labelRefs.current[i] = el }}
-                    className="absolute inset-0 text-sm font-medium text-orange whitespace-nowrap"
+                    className="absolute inset-0 text-sm font-medium text-orange-dark whitespace-nowrap"
                   >
                     {p.label}
                   </span>
@@ -203,6 +209,7 @@ function DesktopVersion() {
                 ref={el => { panelRefs.current[i] = el }}
                 className="absolute inset-0"
                 style={{ opacity: 0 }}
+                aria-hidden={i !== 0}
               >
                 {point.content}
               </div>

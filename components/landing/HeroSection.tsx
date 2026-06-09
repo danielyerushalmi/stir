@@ -55,7 +55,7 @@ export function HeroSection() {
             <div
               ref={badgeRef}
               style={{ opacity: 0 }}
-              className="mb-6 inline-flex items-center rounded-full bg-orange-light px-4 py-1.5 text-xs font-medium text-orange cursor-default"
+              className="mb-6 inline-flex items-center rounded-full bg-orange-light px-4 py-1.5 text-xs font-medium text-orange-dark cursor-default"
             >
               AI-powered reputation management for restaurants
             </div>
@@ -91,13 +91,13 @@ export function HeroSection() {
               >
                 <Link
                   href="/sign-up"
-                  className="block rounded-lg bg-orange px-6 py-3 text-base font-medium text-white hover:bg-orange-dark transition-colors shadow-lg shadow-orange/20"
+                  className="block rounded-lg bg-orange px-6 py-3 text-base font-medium text-white hover:bg-orange-dark transition-colors shadow-lg shadow-orange/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2"
                 >
                   Start free, no card needed
                 </Link>
               </motion.div>
-              <a href="#how-it-works" className="text-sm font-medium text-text-muted hover:text-brown transition-colors">
-                See how it works ↓
+              <a href="#how-it-works" className="rounded text-sm font-medium text-text-muted hover:text-brown transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2">
+                See how it works <span aria-hidden>↓</span>
               </a>
             </div>
 
@@ -132,7 +132,9 @@ export function HeroSection() {
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-medium text-text-muted">Google · Sarah M.</span>
-                  <span className="text-xs text-orange">★★★★★</span>
+                  <span className="text-xs text-orange" role="img" aria-label="5 out of 5 stars">
+                    <span aria-hidden>★★★★★</span>
+                  </span>
                 </div>
                 <p className="text-xs text-brown line-clamp-2 leading-relaxed">Best Italian in town. The carbonara is life-changing.</p>
               </motion.div>
@@ -141,7 +143,7 @@ export function HeroSection() {
                 ref={card2Ref}
                 style={{ opacity: 0 }}
                 whileHover={{ scale: 1.04, y: -4, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
-                className="absolute top-5 right-5 z-10 w-52 rounded-xl border border-red-light bg-red-light p-3.5 shadow-xl hidden lg:block cursor-default"
+                className="absolute top-5 right-5 z-10 w-52 rounded-xl border border-red-dark/30 bg-red-light p-3.5 shadow-xl hidden lg:block cursor-default"
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-medium text-red-dark">Yelp · James T.</span>

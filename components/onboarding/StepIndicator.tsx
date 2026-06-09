@@ -31,7 +31,7 @@ export function StepIndicator({ currentStep }: StepIndicatorProps) {
                   </>
                 ) : stepNum}
               </div>
-              <span className={cn('text-xs', active ? 'text-orange font-medium' : 'text-text-lighter')}>{label}</span>
+              <span className={cn('text-xs', active ? 'text-orange-dark font-medium' : 'text-text-lighter')}>{label}</span>
             </div>
             {i < STEPS.length - 1 && (
               <div className={cn('mx-2 h-px w-12 mb-5', done ? 'bg-orange' : 'bg-border')} />

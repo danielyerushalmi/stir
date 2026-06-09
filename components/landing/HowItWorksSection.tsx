@@ -1,5 +1,6 @@
 'use client'
 import { useRef, useEffect } from 'react'
+import { useReducedMotion } from 'framer-motion'
 import { createTimeline, animate, stagger } from 'animejs'
 
 // Wisprflow-style voice waveform
@@ -45,7 +46,7 @@ const STEPS = [
             className="flex items-center justify-between rounded-lg border border-green/30 bg-green-light/40 px-4 py-2.5"
           >
             <span className="text-sm font-medium text-brown">{p}</span>
-            <span className="text-xs text-green font-medium">✓ Connected</span>
+            <span className="text-xs text-green-dark font-medium"><span aria-hidden>✓</span> Connected</span>
           </div>
         ))}
       </div>
@@ -59,7 +60,7 @@ const STEPS = [
       <div>
         <p className="text-xs text-text-lighter mb-3 uppercase tracking-wide">Voice training</p>
         <div className="rounded-lg bg-orange-light border border-orange/20 p-4">
-          <p className="text-xs text-orange mb-2 font-medium">How would you reply to this 5★ review?</p>
+          <p className="text-xs text-orange-dark mb-2 font-medium">How would you reply to this 5<span aria-hidden>★</span> review?</p>
           <p className="text-sm text-brown italic mb-3">&quot;Best meal we&apos;ve had in years. Pasta was incredible.&quot;</p>
           <div className="rounded bg-white border border-border px-3 py-2">
             <p className="text-sm text-brown mb-2">So glad you loved it! The pasta is made fresh every morning...</p>
@@ -77,7 +78,7 @@ const STEPS = [
       <div>
         <p className="text-xs text-text-lighter mb-3 uppercase tracking-wide">AI Draft ready</p>
         <div className="rounded-xl border border-orange/30 bg-orange-light p-4">
-          <p className="text-xs text-orange font-medium mb-2 uppercase tracking-wide">AI Draft</p>
+          <p className="text-xs text-orange-dark font-medium mb-2 uppercase tracking-wide">AI Draft</p>
           <p className="text-sm text-brown mb-3">&quot;So glad you came in! The carbonara is Marco&apos;s recipe — he&apos;s been making it for 20 years. Hope to see you again soon.&quot;</p>
           <div className="flex gap-2">
             <span className="rounded-lg bg-orange text-white text-xs font-medium px-3 py-1.5">Approve &amp; Post</span>
@@ -100,7 +101,7 @@ function MobileVersion() {
         <div className="grid md:grid-cols-3 gap-8">
           {STEPS.map(step => (
             <div key={step.num}>
-              <div className="w-10 h-10 rounded-full bg-orange-light flex items-center justify-center text-orange font-semibold text-sm mb-4">{step.num}</div>
+              <div className="w-10 h-10 rounded-full bg-orange-light flex items-center justify-center text-orange-dark font-semibold text-sm mb-4">{step.num}</div>
               <h3 className="font-semibold text-brown text-lg mb-2">{step.title}</h3>
               <p className="text-text-muted text-base leading-relaxed">{step.body}</p>
             </div>
@@ -117,8 +118,10 @@ function DesktopVersion() {
   const stepRefs      = useRef<(HTMLDivElement | null)[]>([])
   const numCircleRefs = useRef<(HTMLDivElement | null)[]>([])
   const barRef        = useRef<HTMLDivElement>(null)
+  const reducedMotion = useReducedMotion()
 
   useEffect(() => {
+    if (reducedMotion) return
     const container = containerRef.current
     const mockups   = mockupRefs.current.filter(Boolean) as HTMLDivElement[]
     const steps     = stepRefs.current.filter(Boolean) as HTMLDivElement[]
@@ -134,7 +137,7 @@ function DesktopVersion() {
       c.classList.toggle('bg-orange', i === 0)
       c.classList.toggle('bg-orange-light', i !== 0)
       const span = c.querySelector('span')
-      if (span) span.className = i === 0 ? 'text-sm font-semibold text-white' : 'text-sm font-semibold text-orange'
+      if (span) span.className = i === 0 ? 'text-sm font-semibold text-white' : 'text-sm font-semibold text-orange-dark'
     })
 
     const tl = createTimeline({ autoplay: false, defaults: { ease: 'linear', duration: 80 } })
@@ -179,7 +182,10 @@ function DesktopVersion() {
       cancelAnimationFrame(raf)
       tl.revert()
     }
-  }, [])
+  }, [reducedMotion])
+
+  // Reduced motion: render the flat, fully-visible layout instead of scroll-scrubbed panels
+  if (reducedMotion) return <MobileVersion />
 
   return (
     <section id="how-it-works" ref={containerRef} className="relative bg-white" style={{ height: '300vh' }}>
@@ -198,6 +204,7 @@ function DesktopVersion() {
                   ref={el => { mockupRefs.current[i] = el }}
                   className="absolute inset-0 p-6"
                   style={{ opacity: 0 }}
+                  aria-hidden={i !== 0}
                 >
                   {step.mockup}
                 </div>
@@ -219,7 +226,7 @@ function DesktopVersion() {
                   ref={el => { numCircleRefs.current[i] = el }}
                   className="w-10 h-10 shrink-0 rounded-full bg-orange-light flex items-center justify-center"
                 >
-                  <span className="text-sm font-semibold text-orange">{step.num}</span>
+                  <span className="text-sm font-semibold text-orange-dark">{step.num}</span>
                 </div>
                 <div>
                   <h3 className="font-semibold text-brown mb-1">{step.title}</h3>

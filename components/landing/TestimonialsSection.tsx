@@ -30,9 +30,11 @@ export function TestimonialsSection() {
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 + 0.3 }}
-                className="mb-4 text-orange text-sm"
+                className="mb-4 text-orange-dark text-sm"
+                role="img"
+                aria-label={`${t.rating} out of 5 stars`}
               >
-                {'★'.repeat(t.rating)}
+                <span aria-hidden>{'★'.repeat(t.rating)}</span>
               </motion.div>
               <p className="text-brown text-base leading-relaxed mb-4">&quot;{t.quote}&quot;</p>
               <div>

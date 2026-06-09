@@ -142,7 +142,7 @@ export default function ReviewsPage() {
   const RATINGS = ['', '1', '2', '3', '4', '5']
 
   return (
-    <div className="p-4 md:p-8">
+    <main id="main-content" tabIndex={-1} className="p-4 md:p-8 focus:outline-none">
       {toast && <Toast message={toast.message} type={toast.type} onDismiss={() => setToast(null)} />}
 
       <div className="flex items-center justify-between mb-6">
@@ -210,7 +210,7 @@ export default function ReviewsPage() {
             <div className="text-4xl mb-4" aria-hidden="true">⭐</div>
             <h3 className="text-lg font-semibold text-charcoal mb-2">No reviews yet</h3>
             <p className="text-sm text-text-muted mb-5">Connect your Google account to start pulling in reviews.</p>
-            <a href="/dashboard/settings?tab=platforms" className="inline-flex items-center rounded-lg bg-orange px-4 py-2 text-sm font-medium text-white hover:bg-orange-dark transition-colors">
+            <a href="/dashboard/settings?tab=platforms" className="inline-flex items-center rounded-lg bg-orange px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2">
               Connect Google →
             </a>
           </div>
@@ -248,6 +248,6 @@ export default function ReviewsPage() {
           <Button variant="secondary" size="sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Next →</Button>
         </div>
       )}
-    </div>
+    </main>
   )
 }

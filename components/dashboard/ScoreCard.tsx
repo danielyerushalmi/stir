@@ -11,7 +11,7 @@ interface ScoreCardProps {
   integer?: boolean
 }
 
-function useCountUp(target: number | null, duration = 1200) {
+function useCountUp(target: number | null, integer = false, duration = 1200) {
   const [value, setValue] = useState(0)
   const prefersReduced = useReducedMotion()
 
@@ -25,18 +25,19 @@ function useCountUp(target: number | null, duration = 1200) {
       const elapsed = Date.now() - start
       const progress = Math.min(elapsed / duration, 1)
       const eased = 1 - Math.pow(1 - progress, 3)
-      setValue(Math.round(eased * target * 10) / 10)
+      const raw = eased * target
+      setValue(integer ? Math.round(raw) : Math.round(raw * 10) / 10)
       if (progress < 1) requestAnimationFrame(tick)
     }
     requestAnimationFrame(tick)
     return () => { cancelled = true }
-  }, [target, duration, prefersReduced])
+  }, [target, integer, duration, prefersReduced])
 
   return value
 }
 
 export function ScoreCard({ label, score, trend, subtitle, integer = false }: ScoreCardProps) {
-  const animated = useCountUp(score)
+  const animated = useCountUp(score, integer)
   const displayValue = score !== null
     ? (integer ? String(Math.round(animated)) : animated.toFixed(1))
     : '—'
@@ -57,7 +58,7 @@ export function ScoreCard({ label, score, trend, subtitle, integer = false }: Sc
       <div className="flex items-end gap-2">
         <p className={cn('text-3xl font-semibold', textColor)}>{displayValue}</p>
         {trend && trend.direction !== 'flat' && (
-          <span className={cn('text-sm font-medium mb-1', trend.direction === 'up' ? 'text-green' : 'text-red-dark')}>
+          <span className={cn('text-sm font-medium mb-1', trend.direction === 'up' ? 'text-green-dark' : 'text-red-dark')}>
             {trend.direction === 'up' ? '↑' : '↓'} {trend.delta}
           </span>
         )}
