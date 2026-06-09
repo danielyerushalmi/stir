@@ -67,7 +67,7 @@ export default function InsightsPage() {
   const filtered = filter === 'ALL' ? insights : insights.filter(i => i.type === filter)
 
   return (
-    <div className="p-4 md:p-8">
+    <main id="main-content" tabIndex={-1} className="p-4 md:p-8 focus:outline-none">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-charcoal tracking-tight">Insights</h1>
         <Button size="sm" onClick={generate} disabled={generating}>
@@ -137,7 +137,7 @@ export default function InsightsPage() {
                 </div>
                 {!insight.isRead && (
                   <button
-                    className="text-xs text-text-lighter hover:text-orange shrink-0"
+                    className="text-xs text-text-lighter hover:text-orange-dark shrink-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2"
                     onClick={() => markRead(insight.id)}
                   >
                     Mark as read
@@ -148,6 +148,6 @@ export default function InsightsPage() {
           ))}
         </div>
       )}
-    </div>
+    </main>
   )
 }

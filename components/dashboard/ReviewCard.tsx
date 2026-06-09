@@ -6,17 +6,17 @@ import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 
 const PLATFORM_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  GOOGLE: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'Google' },
-  YELP: { bg: 'bg-red-50', text: 'text-red-600', label: 'Yelp' },
-  TRIPADVISOR: { bg: 'bg-green-light', text: 'text-green', label: 'TripAdvisor' },
-  DOORDASH: { bg: 'bg-red-50', text: 'text-red-600', label: 'DoorDash' },
-  UBEREATS: { bg: 'bg-green-light', text: 'text-green', label: 'Uber Eats' },
-  GRUBHUB: { bg: 'bg-orange-light', text: 'text-orange', label: 'Grubhub' },
+  GOOGLE: { bg: 'bg-brown/10', text: 'text-brown', label: 'Google' },
+  YELP: { bg: 'bg-orange-light', text: 'text-orange-dark', label: 'Yelp' },
+  TRIPADVISOR: { bg: 'bg-green-light', text: 'text-green-dark', label: 'TripAdvisor' },
+  DOORDASH: { bg: 'bg-orange-light', text: 'text-orange-dark', label: 'DoorDash' },
+  UBEREATS: { bg: 'bg-green-light', text: 'text-green-dark', label: 'Uber Eats' },
+  GRUBHUB: { bg: 'bg-border', text: 'text-text-muted', label: 'Grubhub' },
 }
 
 function StarRating({ rating }: { rating: number }) {
   return (
-    <span className="flex items-center gap-0.5">
+    <span className="flex items-center gap-0.5" role="img" aria-label={`${rating} out of 5 stars`}>
       {Array.from({ length: 5 }, (_, i) => (
         <svg key={i} width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
           <path
@@ -75,7 +75,7 @@ export function ReviewCard({ review, onDraftRequest, drafting = false }: ReviewC
       <p id={`review-text-${review.id}`} className={cn('mt-2 text-sm text-charcoal', !expanded && 'line-clamp-2')}>{review.reviewText}</p>
       {review.reviewText.length > 120 && (
         <button
-          className="text-xs text-orange mt-1 hover:text-orange-dark"
+          className="text-xs text-orange-dark mt-1 hover:text-orange"
           onClick={() => setExpanded(e => !e)}
           aria-expanded={expanded}
           aria-controls={`review-text-${review.id}`}

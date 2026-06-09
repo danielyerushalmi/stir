@@ -24,7 +24,7 @@ function PulsingCta() {
   }, [])
   return (
     <div ref={wrapRef} className="inline-block rounded-lg">
-      <Link href="/sign-up" className="inline-block rounded-lg bg-orange px-8 py-3.5 text-base font-medium text-white hover:bg-orange-dark transition-colors">
+      <Link href="/sign-up" className="inline-block rounded-lg bg-orange px-8 py-3.5 text-base font-medium text-white hover:bg-orange-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brown">
         Get started free
       </Link>
     </div>

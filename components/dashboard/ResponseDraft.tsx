@@ -59,11 +59,12 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss,
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-          className="text-green text-lg"
+          className="text-green-dark text-lg"
+          aria-hidden="true"
         >
           ✓
         </motion.span>
-        <p className="text-sm text-green font-medium">Response approved and posted.</p>
+        <p className="text-sm text-green-dark font-medium">Response approved and posted.</p>
       </motion.div>
     )
   }
@@ -113,8 +114,8 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss,
         className="rounded-xl border-l-4 border border-orange/30 border-l-orange bg-orange-light p-4"
       >
         <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-orange/20">
-          <span className="text-orange text-sm" aria-hidden="true">✦</span>
-          <p className="text-sm font-medium text-orange">AI Draft</p>
+          <span className="text-orange-dark text-sm" aria-hidden="true">✦</span>
+          <p className="text-sm font-medium text-orange-dark">AI Draft</p>
         </div>
         <AnimatePresence mode="wait">
           {showTyping ? (
@@ -131,7 +132,7 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss,
               />
               <p className={cn(
                 'text-xs text-right mb-3 -mt-2',
-                text.length > 300 ? 'text-red-dark' : text.length >= 80 ? 'text-green' : 'text-text-lighter'
+                text.length > 300 ? 'text-red-dark' : text.length >= 80 ? 'text-green-dark' : 'text-text-lighter'
               )}>
                 {text.length}/300
               </p>

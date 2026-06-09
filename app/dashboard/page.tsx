@@ -36,9 +36,9 @@ export default async function DashboardPage({
   const responseRate = totalReviews > 0 ? Math.round((respondedReviews / totalReviews) * 100) : 0
 
   const INSIGHT_STYLES = {
-    ALERT: { bg: 'bg-red-light/30', border: 'border-l-red-dark', label: 'Alert' },
-    TIP: { bg: 'bg-green-light/40', border: 'border-l-green', label: 'Tip' },
-    DELIVERY_GAP: { bg: 'bg-amber-light/30', border: 'border-l-amber-dark', label: 'Delivery' },
+    ALERT: { bg: 'bg-red-light/30', border: 'border-l-red-dark', label: 'Alert', text: 'text-red-dark' },
+    TIP: { bg: 'bg-green-light/40', border: 'border-l-green', label: 'Tip', text: 'text-green-dark' },
+    DELIVERY_GAP: { bg: 'bg-amber-light/30', border: 'border-l-amber-dark', label: 'Delivery', text: 'text-amber-dark' },
   } as const
   const now = new Date()
   const hour = now.getHours()
@@ -46,7 +46,7 @@ export default async function DashboardPage({
   const dayLabel = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 
   return (
-    <div className="p-4 md:p-8">
+    <main id="main-content" tabIndex={-1} className="p-4 md:p-8 focus:outline-none">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-charcoal tracking-tight">{timeGreeting}, {restaurant.name}</h1>
@@ -66,7 +66,7 @@ export default async function DashboardPage({
             <p className="font-medium text-amber-dark text-sm">Complete your voice setup</p>
             <p className="text-xs text-amber-dark/80 mt-0.5">Train Stir to write responses in your voice.</p>
           </div>
-          <Link href="/onboarding/voice" className="text-sm font-medium text-orange hover:text-orange-dark">Set up now →</Link>
+          <Link href="/onboarding/voice" className="text-sm font-medium text-orange-dark hover:text-orange-dark underline-offset-2 hover:underline rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2">Set up now →</Link>
         </div>
       )}
 
@@ -85,12 +85,12 @@ export default async function DashboardPage({
         <div className="lg:col-span-2 rounded-xl border border-border bg-white p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-charcoal">Recent reviews</h2>
-            <Link href="/dashboard/reviews" className="text-xs text-orange hover:underline">View all →</Link>
+            <Link href="/dashboard/reviews" className="text-xs text-orange-dark hover:underline rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2">View all →</Link>
           </div>
           {recentReviews.length === 0
             ? <div>
                 <p className="text-sm text-text-muted">Connect your Google account to start pulling in reviews.</p>
-                <Link href="/dashboard/settings?tab=platforms" className="bg-orange text-white rounded-lg px-4 py-2 text-sm inline-block mt-3">Connect Google</Link>
+                <Link href="/dashboard/settings?tab=platforms" className="mt-3 inline-flex items-center rounded-lg bg-orange px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2">Connect Google →</Link>
               </div>
             : <div className="flex flex-col gap-0">
                 {recentReviews.map(r => (
@@ -100,11 +100,11 @@ export default async function DashboardPage({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-xs font-medium text-text-lighter uppercase">{r.platform}</span>
-                        <span className={`text-xs ${r.rating >= 4 ? 'text-green' : r.rating <= 2 ? 'text-red-dark' : 'text-amber-dark'}`}>{'★'.repeat(r.rating)}</span>
+                        <span role="img" aria-label={`${r.rating} out of 5 stars`} className={`text-xs ${r.rating >= 4 ? 'text-green-dark' : r.rating <= 2 ? 'text-red-dark' : 'text-amber-dark'}`}><span aria-hidden="true">{'★'.repeat(r.rating)}</span></span>
                       </div>
                       <p className="text-sm text-charcoal line-clamp-1">{r.reviewText}</p>
                     </div>
-                    {!r.response && <Link href="/dashboard/reviews" className="text-xs text-orange shrink-0 hover:underline">Reply →</Link>}
+                    {!r.response && <Link href="/dashboard/reviews" className="text-xs text-orange-dark shrink-0 hover:underline rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2">Reply →</Link>}
                   </div>
                 ))}
               </div>
@@ -113,14 +113,14 @@ export default async function DashboardPage({
         <div className="rounded-xl border border-border bg-white p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-charcoal">What to fix</h2>
-            <Link href="/dashboard/insights" className="text-xs text-orange hover:underline">All insights →</Link>
+            <Link href="/dashboard/insights" className="text-xs text-orange-dark hover:underline rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2">All insights →</Link>
           </div>
           {insights.length === 0
             ? <p className="text-sm text-text-muted">Generate insights to see recommendations.</p>
             : <div className="flex flex-col gap-3">
                 {insights.map(i => (
                   <div key={i.id} className={`rounded-lg border-l-4 p-3 ${INSIGHT_STYLES[i.type as keyof typeof INSIGHT_STYLES]?.bg ?? 'bg-cream'} ${INSIGHT_STYLES[i.type as keyof typeof INSIGHT_STYLES]?.border ?? 'border-l-orange'}`}>
-                    <p className="text-xs font-medium text-orange mb-0.5">
+                    <p className={`text-xs font-medium mb-0.5 ${INSIGHT_STYLES[i.type as keyof typeof INSIGHT_STYLES]?.text ?? 'text-orange-dark'}`}>
                       {INSIGHT_STYLES[i.type as keyof typeof INSIGHT_STYLES]?.label ?? i.type}
                     </p>
                     <p className="text-sm font-medium text-charcoal">{i.title}</p>
@@ -131,6 +131,6 @@ export default async function DashboardPage({
           }
         </div>
       </div>
-    </div>
+    </main>
   )
 }

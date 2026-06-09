@@ -8,7 +8,7 @@ type Tab = typeof TABS[number]
 const FAKE_REVIEWS = [
   { id: '1', platform: 'Google', rating: 5, author: 'Sarah M.', text: 'Best Italian in Austin. The carbonara is life-changing.', platformBg: 'bg-blue-50', platformText: 'text-blue-600' },
   { id: '2', platform: 'Yelp', rating: 2, author: 'James T.', text: 'Service was slow and my risotto arrived cold. Disappointing.', platformBg: 'bg-red-50', platformText: 'text-red-600' },
-  { id: '3', platform: 'TripAdvisor', rating: 4, author: 'Anna W.', text: 'Lovely atmosphere and homemade pasta. Will be back soon.', platformBg: 'bg-green-light', platformText: 'text-green' },
+  { id: '3', platform: 'TripAdvisor', rating: 4, author: 'Anna W.', text: 'Lovely atmosphere and homemade pasta. Will be back soon.', platformBg: 'bg-green-light', platformText: 'text-green-dark' },
 ]
 
 const FAKE_DRAFT = "So glad you came in, Sarah! The carbonara is Marco's recipe — he's been perfecting it for 20 years. See you again soon!"
@@ -35,9 +35,9 @@ function ReviewsTab() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${r.platformBg} ${r.platformText}`}>{r.platform}</span>
-                  <span className="text-xs">
+                  <span className="text-xs" role="img" aria-label={`${r.rating} out of 5 stars`}>
                     {Array.from({ length: 5 }, (_, i) => (
-                      <span key={i} className={i < r.rating ? 'text-orange' : 'text-border'}>★</span>
+                      <span key={i} className={i < r.rating ? 'text-orange' : 'text-border'} aria-hidden>★</span>
                     ))}
                   </span>
                 </div>
@@ -45,9 +45,9 @@ function ReviewsTab() {
               </div>
               <div className="shrink-0">
                 {posted.has(r.id) ? (
-                  <span className="text-xs text-green font-medium">✓ Replied</span>
+                  <span className="text-xs text-green-dark font-medium"><span aria-hidden>✓</span> Replied</span>
                 ) : showDraft === r.id ? (
-                  <span className="text-xs text-orange font-medium">Draft ready</span>
+                  <span className="text-xs text-orange-dark font-medium">Draft ready</span>
                 ) : (
                   <button
                     onClick={() => handleDraft(r.id)}
@@ -68,7 +68,7 @@ function ReviewsTab() {
                 className="mt-2 ml-4 overflow-hidden"
               >
                 <div className="rounded-xl border-l-4 border-l-orange border border-orange/20 bg-orange-light p-4">
-                  <p className="text-xs font-medium text-orange uppercase tracking-wide mb-2">AI Draft</p>
+                  <p className="text-xs font-medium text-orange-dark uppercase tracking-wide mb-2">AI Draft</p>
                   {typing ? (
                     <div className="flex gap-1 py-1">
                       {[0, 1, 2].map(i => (
@@ -133,7 +133,7 @@ function ScoreTab() {
         {score.toFixed(1)}
       </motion.div>
       <div className="flex items-center justify-center gap-1 mb-2">
-        <motion.span animate={{ opacity: started ? 1 : 0 }} className="text-green text-sm font-medium">↑ 1.1</motion.span>
+        <motion.span animate={{ opacity: started ? 1 : 0 }} className="text-green-dark text-sm font-medium"><span aria-hidden>↑</span> 1.1</motion.span>
         <span className="text-xs text-text-lighter">vs last month</span>
       </div>
       <div className="grid grid-cols-2 gap-3 mt-6">
@@ -158,7 +158,7 @@ function ScoreTab() {
 const INSIGHTS = [
   { id: '1', type: 'ALERT', title: 'Slow service complaints up 40%', body: 'Wait time mentions in negative reviews have increased significantly over the last 30 days.', badgeBg: 'bg-red-light', badgeText: 'text-red-dark' },
   { id: '2', type: 'TIP', title: 'Delivery packaging needs improvement', body: '3 of your last 5 delivery reviews mention spills or cold food on arrival.', badgeBg: 'bg-amber-light', badgeText: 'text-amber-dark' },
-  { id: '3', type: 'TIP', title: 'Tiramisu is your #1 mentioned dish', body: 'Customers rave about it in 12 recent reviews. Feature it more prominently.', badgeBg: 'bg-green-light', badgeText: 'text-green' },
+  { id: '3', type: 'TIP', title: 'Tiramisu is your #1 mentioned dish', body: 'Customers rave about it in 12 recent reviews. Feature it more prominently.', badgeBg: 'bg-green-light', badgeText: 'text-green-dark' },
 ]
 
 function InsightsTab() {

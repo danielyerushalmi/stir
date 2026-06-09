@@ -28,7 +28,7 @@ export function PricingSection() {
               whileHover={{ y: plan.highlight ? -6 : -3 }}
               className={`rounded-2xl border p-6 flex flex-col bg-white ${plan.highlight ? 'border-orange shadow-lg shadow-orange/10 ring-2 ring-orange/20' : 'border-border shadow-sm'}`}
             >
-              {plan.highlight && <div className="mb-3 text-xs font-medium text-orange bg-orange-light rounded-full px-3 py-1 w-fit">Most popular</div>}
+              {plan.highlight && <div className="mb-3 text-xs font-medium text-orange-dark bg-orange-light rounded-full px-3 py-1 w-fit">Most popular</div>}
               <div className="mb-1 font-semibold text-brown">{plan.name}</div>
               <div className="mb-5 flex items-end gap-0.5">
                 <span className="text-3xl font-semibold text-brown">{plan.price}</span>
@@ -37,16 +37,16 @@ export function PricingSection() {
               <ul className="flex flex-col gap-2 mb-6 flex-1">
                 {plan.features.map(f => (
                   <li key={f} className="flex items-start gap-2 text-sm text-text-muted">
-                    <span className="text-green mt-0.5 shrink-0">✓</span>{f}
+                    <span className="text-green-dark mt-0.5 shrink-0" aria-hidden>✓</span>{f}
                   </li>
                 ))}
               </ul>
               {plan.href.startsWith('mailto:') ? (
-                <a href={plan.href} className={`rounded-lg px-4 py-2.5 text-sm font-medium text-center transition-colors ${plan.highlight ? 'bg-orange text-white hover:bg-orange-dark' : 'border border-border text-brown hover:bg-cream'}`}>
+                <a href={plan.href} className={`rounded-lg px-4 py-2.5 text-sm font-medium text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2 ${plan.highlight ? 'bg-orange text-white hover:bg-orange-dark' : 'border border-border text-brown hover:bg-cream'}`}>
                   {plan.cta}
                 </a>
               ) : (
-                <Link href={plan.href} className={`rounded-lg px-4 py-2.5 text-sm font-medium text-center transition-colors ${plan.highlight ? 'bg-orange text-white hover:bg-orange-dark' : 'border border-border text-brown hover:bg-cream'}`}>
+                <Link href={plan.href} className={`rounded-lg px-4 py-2.5 text-sm font-medium text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2 ${plan.highlight ? 'bg-orange text-white hover:bg-orange-dark' : 'border border-border text-brown hover:bg-cream'}`}>
                   {plan.cta}
                 </Link>
               )}
