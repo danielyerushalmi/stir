@@ -29,20 +29,43 @@ export default function PlanPage() {
         <h1 className="text-2xl font-semibold text-charcoal mb-2">Choose your plan</h1>
         <p className="text-text-muted text-sm">You can upgrade at any time from your dashboard.</p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div role="radiogroup" aria-label="Choose your plan" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {PLANS.map(plan => (
-          <Card key={plan.id} className={cn('cursor-pointer transition-all', plan.highlight && 'border-orange ring-2 ring-orange/20', selected === plan.id && 'shadow-md')} onClick={() => setSelected(plan.id)}>
+          <Card
+            key={plan.id}
+            role="radio"
+            aria-checked={selected === plan.id}
+            aria-label={`${plan.label}, ${plan.price}`}
+            tabIndex={0}
+            onClick={() => setSelected(plan.id)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                setSelected(plan.id)
+              }
+            }}
+            className={cn(
+              'cursor-pointer transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-orange',
+              plan.highlight && 'border-orange ring-2 ring-orange/20',
+              selected === plan.id && 'shadow-md',
+            )}
+          >
             {plan.highlight && <Badge variant="orange" className="mb-3">Most popular</Badge>}
             <div className="mb-1 font-semibold text-charcoal">{plan.label}</div>
             <div className="mb-4 text-2xl font-semibold text-orange">{plan.price}</div>
             <ul className="flex flex-col gap-2 mb-6">
               {plan.features.map(f => (
                 <li key={f} className="flex items-center gap-2 text-sm text-text-muted">
-                  <span className="text-green">✓</span>{f}
+                  <span className="text-green" aria-hidden="true">✓</span>{f}
                 </li>
               ))}
             </ul>
-            <Button variant={plan.highlight ? 'primary' : 'secondary'} size="sm" className="w-full" onClick={() => handleSelect(plan.id)}>
+            <Button
+              variant={plan.highlight ? 'primary' : 'secondary'}
+              size="sm"
+              className="w-full"
+              onClick={e => { e.stopPropagation(); handleSelect(plan.id) }}
+            >
               {plan.id === 'FREE' ? 'Start free' : 'Coming soon'}
             </Button>
           </Card>

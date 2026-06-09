@@ -30,3 +30,28 @@ h1, h2, h3, h4 {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
+
+/* Accessibility: respect reduced-motion preference.
+   Neutralizes marquee ticker, animate-ping, scroll crossfades, etc.
+   without fully breaking functional transitions. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Accessibility: consistent, always-visible keyboard focus.
+   Orange hex (#E8630A) matches the `orange` token in tailwind.config.ts. */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+[role="radio"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #E8630A;
+  outline-offset: 2px;
+}
