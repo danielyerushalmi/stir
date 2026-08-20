@@ -19,7 +19,7 @@
     "@upstash/redis": "^1.38.0",
     "animejs": "^4.4.1",
     "clsx": "^2.1.1",
-    "framer-motion": "^12.38.0",
+    "framer-motion": "^13.1.0",
     "googleapis": "^171.4.0",
     "next": "^16.2.7",
     "pg": "^8.20.0",
