@@ -80,7 +80,7 @@ export function HeroSection() {
               style={{ opacity: 0 }}
               className="mb-8 text-lg text-text-muted max-w-xl leading-relaxed"
             >
-              Stir aggregates your reviews across Google, Yelp, TripAdvisor and delivery platforms, then drafts responses in your voice so every customer feels heard — without eating your day.
+              Stir pulls your Google reviews into one dashboard — Yelp, TripAdvisor and delivery platforms coming soon — and drafts responses in your voice so every customer feels heard, without eating your day.
             </p>
 
             <div ref={ctaRef} style={{ opacity: 0 }} className="flex items-center gap-4 flex-wrap mb-10">
@@ -102,7 +102,7 @@ export function HeroSection() {
             </div>
 
             <p ref={trustRef} style={{ opacity: 0 }} className="text-xs text-text-lighter">
-              Trusted by 500+ independent restaurants
+              Built for independent restaurants
             </p>
           </div>
 
@@ -146,7 +146,7 @@ export function HeroSection() {
                 className="absolute top-5 right-5 z-10 w-52 rounded-xl border border-red-dark/30 bg-red-light p-3.5 shadow-xl hidden lg:block cursor-default"
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-medium text-red-dark">Yelp · James T.</span>
+                  <span className="text-xs font-medium text-red-dark">Google · James T.</span>
                   <span className="rounded-full bg-white text-red-dark text-xs font-medium px-2 py-0.5">No reply</span>
                 </div>
                 <p className="text-xs text-brown line-clamp-2 leading-relaxed">Service was slow. The risotto arrived cold. Disappointing.</p>

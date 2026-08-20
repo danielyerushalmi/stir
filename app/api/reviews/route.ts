@@ -30,10 +30,29 @@ export async function GET(req: Request) {
     ...(rating !== undefined && { rating }),
   }
 
-  const [reviews, total] = await Promise.all([
+  const [reviews, total, allTotal, unanswered, urgent, googlePlatform] = await Promise.all([
     db.review.findMany({ where, include: { response: true }, orderBy: { reviewDate: 'desc' }, skip: (page - 1) * pageSize, take: pageSize }),
     db.review.count({ where }),
+    // Unfiltered queue stats for the summary rail (all indexed count queries).
+    db.review.count({ where: { restaurantId: restaurant.id } }),
+    db.review.count({ where: { restaurantId: restaurant.id, response: null } }),
+    db.review.count({ where: { restaurantId: restaurant.id, response: null, rating: { lte: 2 } } }),
+    db.platform.findUnique({
+      where: { restaurantId_name: { restaurantId: restaurant.id, name: 'GOOGLE' } },
+      select: { lastSyncedAt: true },
+    }),
   ])
 
-  return NextResponse.json({ reviews, total, pages: Math.ceil(total / pageSize) })
+  return NextResponse.json({
+    reviews,
+    total,
+    pages: Math.ceil(total / pageSize),
+    stats: {
+      total: allTotal,
+      unanswered,
+      urgent,
+      responded: allTotal - unanswered,
+      lastSyncedAt: googlePlatform?.lastSyncedAt ?? null,
+    },
+  })
 }

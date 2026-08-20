@@ -42,6 +42,7 @@ interface ReviewCardProps {
     authorName: string
     reviewDate: string | Date
     isDelivery: boolean
+    hasExternalReply?: boolean
     response?: { id: string; draftText: string; status: string } | null
   }
   onDraftRequest: (reviewId: string) => void
@@ -56,7 +57,7 @@ export function ReviewCard({ review, onDraftRequest, drafting = false }: ReviewC
   return (
     <motion.div
       className={cn(
-        'border border-border rounded-xl bg-white p-4 shadow-sm border-l-4',
+        'border border-border rounded-xl bg-white px-4 py-3 shadow-sm border-l-4',
         review.rating >= 4 ? 'border-l-green' : review.rating <= 2 ? 'border-l-red-dark' : 'border-l-amber-dark',
         review.response?.status === 'POSTED' && 'opacity-75 bg-cream'
       )}
@@ -70,9 +71,11 @@ export function ReviewCard({ review, onDraftRequest, drafting = false }: ReviewC
         {review.isDelivery && <Badge variant="gray">Delivery</Badge>}
         <StarRating rating={review.rating} />
       </div>
-      <p className="text-sm font-medium text-brown">{review.authorName}</p>
-      <p className="text-xs text-text-lighter mt-0.5">{date}</p>
-      <p id={`review-text-${review.id}`} className={cn('mt-2 text-sm text-charcoal', !expanded && 'line-clamp-2')}>{review.reviewText}</p>
+      <p className="text-sm font-medium text-brown">
+        {review.authorName}
+        <span className="ml-2 text-xs font-normal text-text-lighter">{date}</span>
+      </p>
+      <p id={`review-text-${review.id}`} className={cn('mt-1.5 text-sm text-charcoal', !expanded && 'line-clamp-2')}>{review.reviewText}</p>
       {review.reviewText.length > 120 && (
         <button
           className="text-xs text-orange-dark mt-1 hover:text-orange"
@@ -83,17 +86,16 @@ export function ReviewCard({ review, onDraftRequest, drafting = false }: ReviewC
           {expanded ? 'Show less' : 'Read more'}
         </button>
       )}
-      <div className="mt-3 flex items-center gap-2">
+      <div className="mt-2 flex items-center gap-2">
+        {review.hasExternalReply && <Badge variant="gray">Replied on Google</Badge>}
         {review.response ? (
           <Badge variant={review.response.status === 'POSTED' ? 'green' : 'orange'}>
-            {review.response.status === 'POSTED' ? 'Replied' : 'Draft ready'}
+            {review.response.status === 'POSTED' ? 'Replied' : review.response.status === 'APPROVED' ? 'Approved' : 'Draft ready'}
           </Badge>
         ) : (
           <motion.div whileHover={drafting ? undefined : { x: 2 }} transition={{ duration: 0.15 }}>
             <Button size="sm" onClick={() => onDraftRequest(review.id)} disabled={drafting}>
-              {drafting
-                ? 'Drafting…'
-                : review.platform === 'YELP' ? 'Copy AI Response →' : 'Draft reply →'}
+              {drafting ? 'Drafting…' : 'Draft reply →'}
             </Button>
           </motion.div>
         )}

@@ -9,6 +9,7 @@ const mockGenerateDraft = vi.hoisted(() => vi.fn())
 const mockRestaurantFindUnique = vi.hoisted(() => vi.fn())
 const mockReviewFindFirst = vi.hoisted(() => vi.fn())
 const mockReviewResponseUpsert = vi.hoisted(() => vi.fn())
+const mockVoiceSampleCount = vi.hoisted(() => vi.fn())
 
 vi.mock('@/lib/user', () => ({
   requireRestaurant: mockRequireRestaurant,
@@ -27,6 +28,7 @@ vi.mock('@/lib/db', () => ({
     restaurant: { findUnique: mockRestaurantFindUnique },
     review: { findFirst: mockReviewFindFirst },
     reviewResponse: { upsert: mockReviewResponseUpsert },
+    voiceSample: { count: mockVoiceSampleCount },
   },
 }))
 
@@ -60,6 +62,7 @@ beforeEach(() => {
   mockCheckRateLimit.mockResolvedValue(true)
   mockGenerateDraft.mockResolvedValue('Thanks for your feedback!')
   mockReviewResponseUpsert.mockResolvedValue({})
+  mockVoiceSampleCount.mockResolvedValue(3)
 })
 
 describe('POST /api/ai/draft — auth + rate-limit + tenant-scoping envelope', () => {
@@ -169,7 +172,8 @@ describe('POST /api/ai/draft — auth + rate-limit + tenant-scoping envelope', (
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ draft: 'Thanks for your feedback!' })
-    expect(mockGenerateDraft).toHaveBeenCalledWith('rev_1')
+    // generateDraft is tenant-scoped internally — the restaurantId must be passed through.
+    expect(mockGenerateDraft).toHaveBeenCalledWith('rev_1', RESTAURANT_ID)
     expect(mockReviewResponseUpsert).toHaveBeenCalledWith(
       expect.objectContaining({ where: { reviewId: 'rev_1' } }),
     )
@@ -183,5 +187,18 @@ describe('POST /api/ai/draft — auth + rate-limit + tenant-scoping envelope', (
 
     expect(res.status).toBe(422)
     expect((await res.json()).error).toBe('NO_VOICE_SAMPLES')
+  })
+
+  it('returns 422 for zero voice samples BEFORE consuming rate-limit quota', async () => {
+    authedAs()
+    mockVoiceSampleCount.mockResolvedValue(0)
+
+    const res = await POST(jsonReq({ reviewId: 'rev_1' }))
+
+    expect(res.status).toBe(422)
+    expect((await res.json()).error).toBe('NO_VOICE_SAMPLES')
+    // The scarce monthly quota must NOT be charged for a guaranteed failure.
+    expect(mockCheckRateLimit).not.toHaveBeenCalled()
+    expect(mockGenerateDraft).not.toHaveBeenCalled()
   })
 })

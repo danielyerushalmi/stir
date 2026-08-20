@@ -51,11 +51,16 @@ export default function InsightsPage() {
   async function generate() {
     setGenerating(true)
     setError('')
-    const res = await fetch('/api/ai/insights', { method: 'POST' })
-    const data = await res.json()
-    if (res.ok) setInsights(data.insights ?? [])
-    else setError(data.error ?? 'Something went wrong')
-    setGenerating(false)
+    try {
+      const res = await fetch('/api/ai/insights', { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) setInsights(data.insights ?? [])
+      else setError(data.message ?? data.error ?? 'Something went wrong')
+    } catch {
+      setError('Something went wrong. Check your connection and try again.')
+    } finally {
+      setGenerating(false)
+    }
   }
 
   async function markRead(id: string) {

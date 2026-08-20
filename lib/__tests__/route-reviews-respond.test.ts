@@ -7,6 +7,9 @@ const mockCheckRateLimit = vi.hoisted(() => vi.fn())
 const mockReviewFindFirst = vi.hoisted(() => vi.fn())
 const mockReviewResponseUpdate = vi.hoisted(() => vi.fn())
 const mockReviewResponseCreate = vi.hoisted(() => vi.fn())
+const mockReviewResponseUpsert = vi.hoisted(() => vi.fn())
+const mockSubscriptionFindUnique = vi.hoisted(() => vi.fn())
+const mockPlatformFindUnique = vi.hoisted(() => vi.fn())
 
 vi.mock('@/lib/user', () => ({
   requireRestaurant: mockRequireRestaurant,
@@ -27,9 +30,9 @@ vi.mock('@/lib/google', () => ({
 vi.mock('@/lib/db', () => ({
   db: {
     review: { findFirst: mockReviewFindFirst },
-    reviewResponse: { update: mockReviewResponseUpdate, create: mockReviewResponseCreate },
-    subscription: { findUnique: vi.fn() },
-    platform: { findUnique: vi.fn() },
+    reviewResponse: { update: mockReviewResponseUpdate, create: mockReviewResponseCreate, upsert: mockReviewResponseUpsert },
+    subscription: { findUnique: mockSubscriptionFindUnique },
+    platform: { findUnique: mockPlatformFindUnique },
   },
 }))
 
@@ -60,6 +63,9 @@ beforeEach(() => {
   mockReviewFindFirst.mockResolvedValue({ id: 'rev_1', restaurantId: RESTAURANT_ID, platform: 'GOOGLE', response: null })
   mockReviewResponseUpdate.mockResolvedValue({})
   mockReviewResponseCreate.mockResolvedValue({})
+  mockReviewResponseUpsert.mockResolvedValue({ id: 'resp_1' })
+  mockSubscriptionFindUnique.mockResolvedValue(null)
+  mockPlatformFindUnique.mockResolvedValue(null)
 })
 
 describe('POST /api/reviews/respond — auth + rate-limit + tenant-scoping envelope', () => {
@@ -135,7 +141,7 @@ describe('POST /api/reviews/respond — auth + rate-limit + tenant-scoping envel
 
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({ error: 'finalText required for approve' })
-    expect(mockReviewResponseCreate).not.toHaveBeenCalled()
+    expect(mockReviewResponseUpsert).not.toHaveBeenCalled()
   })
 
   it('rejects approve with over-long finalText (400)', async () => {
@@ -163,14 +169,54 @@ describe('POST /api/reviews/respond — auth + rate-limit + tenant-scoping envel
     })
   })
 
-  it('approve without postToGoogle saves locally and returns posted:false', async () => {
+  it('approve without postToGoogle upserts as APPROVED (not POSTED) and returns posted:false', async () => {
     authedAs()
     const res = await POST(jsonReq({ reviewId: 'rev_1', action: 'approve', finalText: 'Thank you!' }))
 
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ ok: true, posted: false })
-    expect(mockReviewResponseCreate).toHaveBeenCalledWith({
-      data: { reviewId: 'rev_1', draftText: 'Thank you!', finalText: 'Thank you!', status: 'POSTED' },
+    expect(await res.json()).toEqual({ ok: true, posted: false, responseId: 'resp_1' })
+    // Upsert (not create) so a double-click race can't violate the @unique reviewId.
+    expect(mockReviewResponseUpsert).toHaveBeenCalledWith({
+      where: { reviewId: 'rev_1' },
+      update: { finalText: 'Thank you!', status: 'APPROVED' },
+      create: { reviewId: 'rev_1', draftText: 'Thank you!', finalText: 'Thank you!', status: 'APPROVED' },
     })
+    expect(mockReviewResponseCreate).not.toHaveBeenCalled()
+  })
+
+  it('approve with postToGoogle on FREE plan saves APPROVED (never posts, never claims POSTED) with an upsell warning', async () => {
+    authedAs()
+    mockSubscriptionFindUnique.mockResolvedValue({ plan: 'FREE' })
+
+    const res = await POST(jsonReq({ reviewId: 'rev_1', action: 'approve', finalText: 'Thanks!', postToGoogle: true }))
+
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.posted).toBe(false)
+    expect(body.warning).toContain('paid plan')
+    // Saved as APPROVED — the paid gate blocks posting, not saving.
+    expect(mockReviewResponseUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({ update: expect.objectContaining({ status: 'APPROVED' }) }),
+    )
+    // And absolutely no external post was attempted.
+    expect(mockPlatformFindUnique).not.toHaveBeenCalled()
+  })
+
+  it('approve with postToGoogle on a paid plan but Google not connected saves APPROVED and returns posted:false', async () => {
+    authedAs()
+    mockSubscriptionFindUnique.mockResolvedValue({ plan: 'STARTER' })
+    mockPlatformFindUnique.mockResolvedValue({ isConnected: false, externalId: null })
+
+    const res = await POST(jsonReq({ reviewId: 'rev_1', action: 'approve', finalText: 'Thanks!', postToGoogle: true }))
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ ok: true, posted: false, responseId: 'resp_1' })
+    // Status must NOT be POSTED when nothing was posted externally.
+    expect(mockReviewResponseUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({ update: expect.objectContaining({ status: 'APPROVED' }) }),
+    )
+    expect(mockReviewResponseUpdate).not.toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: 'POSTED' } }),
+    )
   })
 })

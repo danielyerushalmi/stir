@@ -14,6 +14,14 @@ export async function POST() {
   const plan = restaurantWithSub?.subscription?.plan ?? 'FREE'
   const limits = getPlanLimits(plan)
 
+  // Deterministic precondition BEFORE consuming the scarce daily quota:
+  // generateInsights no-ops without recent reviews, so don't charge for it.
+  const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
+  const reviewCount = await db.review.count({ where: { restaurantId: restaurant.id, reviewDate: { gte: since } } })
+  if (reviewCount === 0) {
+    return NextResponse.json({ error: 'NO_REVIEWS', message: 'Sync some reviews first — insights need review data to analyse.' }, { status: 422 })
+  }
+
   const allowed = await checkRateLimit(`insights:${restaurant.id}`, limits.insightsPer24h, 24 * 3600, { failOpen: false })
   if (!allowed) return NextResponse.json({ error: 'Rate limited. Try again later.' }, { status: 429 })
 

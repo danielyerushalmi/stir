@@ -106,27 +106,37 @@ export async function getOAuthClient(platform: Platform): Promise<OAuth2Client> 
 }
 
 export async function fetchGoogleLocationNames(client: OAuth2Client): Promise<string[]> {
-  const accountsRes = await client.request<{ accounts?: Array<{ name: string }> }>({
-    url: 'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
-  })
+  // Same overall-timeout rationale as fetchGoogleReviews: a hung upstream must
+  // not stall the serverless invocation indefinitely.
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 25_000)
+  try {
+    const accountsRes = await client.request<{ accounts?: Array<{ name: string }> }>({
+      url: 'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
+      signal: controller.signal,
+    })
 
-  const locationNames: string[] = []
-  for (const account of accountsRes.data.accounts ?? []) {
-    if (!account.name) continue
-    try {
-      const locsRes = await client.request<{ locations?: Array<{ name: string }> }>({
-        url: `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name`,
-      })
-      for (const loc of locsRes.data.locations ?? []) {
-        if (loc.name) locationNames.push(loc.name)
+    const locationNames: string[] = []
+    for (const account of accountsRes.data.accounts ?? []) {
+      if (!account.name) continue
+      try {
+        const locsRes = await client.request<{ locations?: Array<{ name: string }> }>({
+          url: `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name`,
+          signal: controller.signal,
+        })
+        for (const loc of locsRes.data.locations ?? []) {
+          if (loc.name) locationNames.push(loc.name)
+        }
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response?.status
+        if (status !== 403) throw err
+        // 403 = this account has no accessible locations — skip
       }
-    } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status
-      if (status !== 403) throw err
-      // 403 = this account has no accessible locations — skip
     }
+    return locationNames
+  } finally {
+    clearTimeout(timer)
   }
-  return locationNames
 }
 
 export type GoogleReview = {
@@ -138,11 +148,18 @@ export type GoogleReview = {
   hasReply: boolean
 }
 
-export async function fetchGoogleReviews(client: OAuth2Client, locationName: string): Promise<GoogleReview[]> {
+export type GoogleReviewsResult = {
+  reviews: GoogleReview[]
+  /** True when the page cap stopped the fetch before all reviews were read. */
+  truncated: boolean
+}
+
+export async function fetchGoogleReviews(client: OAuth2Client, locationName: string): Promise<GoogleReviewsResult> {
   const MAX_PAGES = 20
   const reviews: GoogleReview[] = []
   let pageToken: string | undefined
   let pages = 0
+  let truncated = false
 
   // Overall timeout so a hung upstream can't stall the serverless invocation
   // indefinitely (mirrors lib/ai.ts). The signal is passed to each page fetch.
@@ -150,7 +167,11 @@ export async function fetchGoogleReviews(client: OAuth2Client, locationName: str
   const timer = setTimeout(() => controller.abort(), 25_000)
   try {
     do {
-      if (pages >= MAX_PAGES) break
+      if (pages >= MAX_PAGES) {
+        truncated = true
+        console.warn(`Google review sync truncated at ${MAX_PAGES} pages for ${locationName} — location has more reviews than one sync fetches.`)
+        break
+      }
       pages++
 
       const url = `https://mybusiness.googleapis.com/v4/${locationName}/reviews?pageSize=50${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`
@@ -183,7 +204,7 @@ export async function fetchGoogleReviews(client: OAuth2Client, locationName: str
     clearTimeout(timer)
   }
 
-  return reviews
+  return { reviews, truncated }
 }
 
 export async function postGoogleReply(
@@ -192,9 +213,16 @@ export async function postGoogleReply(
   reviewId: string,
   text: string,
 ): Promise<void> {
-  await client.request({
-    url: `https://mybusiness.googleapis.com/v4/${locationName}/reviews/${reviewId}/reply`,
-    method: 'PUT',
-    data: { comment: text },
-  })
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 15_000)
+  try {
+    await client.request({
+      url: `https://mybusiness.googleapis.com/v4/${locationName}/reviews/${reviewId}/reply`,
+      method: 'PUT',
+      data: { comment: text },
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timer)
+  }
 }

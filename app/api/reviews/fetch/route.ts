@@ -6,6 +6,7 @@ import { requireRestaurant } from '@/lib/user'
 import { checkRateLimit } from '@/lib/redis'
 import { getOAuthClient, fetchGoogleReviews, GoogleDisconnectedError } from '@/lib/google'
 import { generateInsights } from '@/lib/ai'
+import { getPlanLimits } from '@/lib/limits'
 
 export async function POST() {
   const ctx = await requireRestaurant()
@@ -28,12 +29,12 @@ export async function POST() {
 
   try {
     const client = await getOAuthClient(googlePlatform)
-    const googleReviews = await fetchGoogleReviews(client, googlePlatform.externalId)
+    const { reviews: googleReviews, truncated } = await fetchGoogleReviews(client, googlePlatform.externalId)
 
     const existing = new Map(
       (await db.review.findMany({
         where: { restaurantId: restaurant.id, platform: 'GOOGLE' },
-        select: { externalId: true, rating: true, reviewText: true, authorName: true },
+        select: { externalId: true, rating: true, reviewText: true, authorName: true, hasExternalReply: true },
       })).map(r => [r.externalId, r]),
     )
 
@@ -46,7 +47,8 @@ export async function POST() {
       return (
         prev.rating !== r.rating ||
         prev.reviewText !== r.reviewText ||
-        prev.authorName !== r.authorName
+        prev.authorName !== r.authorName ||
+        prev.hasExternalReply !== r.hasReply
       )
     })
 
@@ -61,6 +63,7 @@ export async function POST() {
           reviewText: r.reviewText,
           authorName: r.authorName,
           isDelivery: false,
+          hasExternalReply: r.hasReply,
           reviewDate: r.reviewDate,
         })),
         skipDuplicates: true,
@@ -73,7 +76,7 @@ export async function POST() {
         for (const r of toUpdate) {
           await tx.review.updateMany({
             where: { restaurantId: restaurant.id, platform: 'GOOGLE', externalId: r.externalId },
-            data: { rating: r.rating, reviewText: r.reviewText, authorName: r.authorName },
+            data: { rating: r.rating, reviewText: r.reviewText, authorName: r.authorName, hasExternalReply: r.hasReply },
           })
         }
       })
@@ -88,8 +91,12 @@ export async function POST() {
     })
 
     if (newCount > 0) {
-      // Share the same rate-limit key as /api/ai/insights so both paths draw from one 24h budget.
-      const insightsAllowed = await checkRateLimit(`insights:${restaurant.id}`, 1, 24 * 3600, { failOpen: false })
+      // Share the same rate-limit key as /api/ai/insights so both paths draw
+      // from one 24h budget — sized by the plan's limit, not a hardcoded 1,
+      // so paid tiers keep their full daily insight allowance.
+      const sub = await db.subscription.findUnique({ where: { restaurantId: restaurant.id } })
+      const limits = getPlanLimits(sub?.plan ?? 'FREE')
+      const insightsAllowed = await checkRateLimit(`insights:${restaurant.id}`, limits.insightsPer24h, 24 * 3600, { failOpen: false })
       if (insightsAllowed) {
         // Defer with after() so the work completes even after the response is sent,
         // instead of risking the serverless instance freezing mid-flight.
@@ -97,7 +104,7 @@ export async function POST() {
       }
     }
 
-    return NextResponse.json({ synced: newCount, updated: updatedCount })
+    return NextResponse.json({ synced: newCount, updated: updatedCount, truncated })
   } catch (err) {
     if (err instanceof GoogleDisconnectedError) {
       return NextResponse.json(

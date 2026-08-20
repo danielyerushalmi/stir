@@ -47,19 +47,30 @@ export async function POST(req: Request) {
     if (finalText.length > 2000) {
       return NextResponse.json({ error: 'Response text too long (max 2000 characters)' }, { status: 400 })
     }
-    if (review.response) {
-      await db.reviewResponse.update({ where: { id: review.response.id }, data: { finalText, status: 'POSTED' } })
-    } else {
-      await db.reviewResponse.create({ data: { reviewId, draftText: finalText, finalText, status: 'POSTED' } })
+
+    // Resolve the paid gate BEFORE any write. The UI always requests posting,
+    // so FREE plans degrade to save-only (with a clear upsell warning) instead
+    // of a hard 402 that would block approving entirely.
+    let wantsGooglePost = Boolean(postToGoogle) && review.platform === 'GOOGLE'
+    let planWarning: string | undefined
+    if (wantsGooglePost) {
+      const sub = await db.subscription.findUnique({ where: { restaurantId: restaurant.id } })
+      if ((sub?.plan ?? 'FREE') === 'FREE') {
+        wantsGooglePost = false
+        planWarning = 'Saved — posting to Google requires a paid plan. Copy your response to reply manually.'
+      }
     }
 
-    if (postToGoogle && review.platform === 'GOOGLE') {
-      const sub = await db.subscription.findUnique({ where: { restaurantId: restaurant.id } })
-      const plan = sub?.plan ?? 'FREE'
-      if (plan === 'FREE') {
-        return NextResponse.json({ error: 'UPGRADE_REQUIRED', message: 'Posting to Google requires a paid plan.' }, { status: 402 })
-      }
+    // Upsert so two concurrent approvals can't race duplicate create() calls
+    // into the @unique reviewId constraint. Status stays APPROVED until an
+    // external post actually succeeds.
+    const saved = await db.reviewResponse.upsert({
+      where: { reviewId },
+      update: { finalText, status: 'APPROVED' },
+      create: { reviewId, draftText: finalText, finalText, status: 'APPROVED' },
+    })
 
+    if (wantsGooglePost) {
       const googlePlatform = await db.platform.findUnique({
         where: { restaurantId_name: { restaurantId: restaurant.id, name: 'GOOGLE' } },
       })
@@ -68,21 +79,22 @@ export async function POST(req: Request) {
         try {
           const client = await getOAuthClient(googlePlatform)
           await postGoogleReply(client, googlePlatform.externalId, review.externalId, finalText)
-          return NextResponse.json({ ok: true, posted: true })
+          await db.reviewResponse.update({ where: { reviewId }, data: { status: 'POSTED' } })
+          return NextResponse.json({ ok: true, posted: true, responseId: saved.id })
         } catch (err) {
           if (err instanceof GoogleDisconnectedError) {
-            return NextResponse.json({ ok: true, posted: false, warning: 'Saved locally — reconnect Google to post.' })
+            return NextResponse.json({ ok: true, posted: false, responseId: saved.id, warning: 'Saved locally — reconnect Google to post.' })
           }
           const gErr = err as { response?: { data?: { error?: { message?: string } } } }
           const warning = gErr?.response?.data?.error?.message?.includes('already')
             ? 'This review already has a reply on Google.'
             : 'Saved locally — failed to post to Google. Please try again.'
-          return NextResponse.json({ ok: true, posted: false, warning })
+          return NextResponse.json({ ok: true, posted: false, responseId: saved.id, warning })
         }
       }
     }
 
-    return NextResponse.json({ ok: true, posted: false })
+    return NextResponse.json({ ok: true, posted: false, responseId: saved.id, ...(planWarning ? { warning: planWarning } : {}) })
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })

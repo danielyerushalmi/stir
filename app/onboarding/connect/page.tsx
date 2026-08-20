@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
 
+// Only Google is a live integration today. Everything else is Coming Soon —
+// matching Settings → Platforms — so onboarding never fakes a connection.
 const PLATFORMS = [
   { id: 'GOOGLE', label: 'Google', icon: '🔵', required: true },
-  { id: 'YELP', label: 'Yelp', icon: '🔴' },
-  { id: 'TRIPADVISOR', label: 'TripAdvisor', icon: '🟢' },
+  { id: 'YELP', label: 'Yelp', icon: '🔴', comingSoon: true },
+  { id: 'TRIPADVISOR', label: 'TripAdvisor', icon: '🟢', comingSoon: true },
   { id: 'DOORDASH', label: 'DoorDash', icon: '🛵', comingSoon: true },
   { id: 'UBEREATS', label: 'Uber Eats', icon: '🚗', comingSoon: true },
   { id: 'GRUBHUB', label: 'Grubhub', icon: '🟠', comingSoon: true },
@@ -19,8 +21,6 @@ const PLATFORMS = [
 export default function ConnectStep() {
   const router = useRouter()
   const [connected, setConnected] = useState<Set<string>>(new Set())
-  const [inputs, setInputs] = useState<Record<string, string>>({})
-  const [saving, setSaving] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -41,32 +41,6 @@ export default function ConnectStep() {
   function connectGoogle() {
     const returnTo = encodeURIComponent('/onboarding/connect?connected=GOOGLE')
     window.location.href = `/api/auth/google?returnTo=${returnTo}`
-  }
-
-  async function connectManual(platformId: string, externalId?: string) {
-    setError('')
-    setSaving(prev => new Set(prev).add(platformId))
-    try {
-      const res = await fetch('/api/onboarding/connect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ platform: platformId, externalId }),
-      })
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        setError(data.error ?? `Could not connect ${platformId}. Please check the URL and try again.`)
-        return
-      }
-      setConnected(prev => new Set(prev).add(platformId))
-    } catch {
-      setError(`Could not connect ${platformId}. Please try again.`)
-    } finally {
-      setSaving(prev => {
-        const next = new Set(prev)
-        next.delete(platformId)
-        return next
-      })
-    }
   }
 
   // Primary "Continue" path requires Google. "Skip for now" is a deliberate
@@ -105,20 +79,7 @@ export default function ConnectStep() {
               {!p.comingSoon && (
                 connected.has(p.id)
                   ? <span className="text-xs text-green font-medium">✓ Connected</span>
-                  : p.id === 'GOOGLE'
-                    ? <Button size="sm" onClick={connectGoogle}>Connect with Google</Button>
-                    : <div className="flex gap-2">
-                        <input
-                          className="rounded border border-border px-3 py-1.5 text-xs w-44"
-                          placeholder="Paste listing URL"
-                          aria-label="Listing URL"
-                          value={inputs[p.id] || ''}
-                          onChange={e => setInputs(prev => ({ ...prev, [p.id]: e.target.value }))}
-                        />
-                        <Button size="sm" onClick={() => connectManual(p.id, inputs[p.id])} disabled={saving.has(p.id)}>
-                          {saving.has(p.id) ? 'Saving...' : 'Save'}
-                        </Button>
-                      </div>
+                  : <Button size="sm" onClick={connectGoogle}>Connect with Google</Button>
               )}
             </div>
           ))}

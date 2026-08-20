@@ -9,7 +9,10 @@ interface ResponseDraftProps {
   reviewId: string
   draft: string
   platform?: string
-  onApprove: (reviewId: string, finalText: string) => Promise<void>
+  /** The review already has a public reply on the platform (e.g. Google) — approving overwrites it. */
+  hasExternalReply?: boolean
+  /** 'posted' when the reply went live externally, 'saved' when stored locally only, 'error' on failure. */
+  onApprove: (reviewId: string, finalText: string) => Promise<'posted' | 'saved' | 'error'>
   onDismiss: (reviewId: string) => Promise<void>
   onRegenerate?: () => void
 }
@@ -29,10 +32,10 @@ function TypingDots() {
   )
 }
 
-export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss, onRegenerate }: ResponseDraftProps) {
+export function ResponseDraft({ reviewId, draft, platform, hasExternalReply, onApprove, onDismiss, onRegenerate }: ResponseDraftProps) {
   const [text, setText] = useState(draft)
   const [loading, setLoading] = useState<'approve' | 'dismiss' | null>(null)
-  const [posted, setPosted] = useState(false)
+  const [outcome, setOutcome] = useState<'posted' | 'saved' | null>(null)
   const [showTyping, setShowTyping] = useState(true)
   const [showConfirm, setShowConfirm] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -48,7 +51,7 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss,
     return () => clearTimeout(t)
   }, [draft])
 
-  if (posted) {
+  if (outcome) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
@@ -64,7 +67,9 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss,
         >
           ✓
         </motion.span>
-        <p className="text-sm text-green-dark font-medium">Response approved and posted.</p>
+        <p className="text-sm text-green-dark font-medium">
+          {outcome === 'posted' ? 'Response approved and posted.' : 'Response saved.'}
+        </p>
       </motion.div>
     )
   }
@@ -87,8 +92,9 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss,
                   setShowConfirm(false)
                   setLoading('approve')
                   try {
-                    await onApprove(reviewId, text)
-                    setPosted(true)
+                    const result = await onApprove(reviewId, text)
+                    // On error the parent showed a toast — keep the draft editable.
+                    if (result !== 'error') setOutcome(result)
                   } finally {
                     setLoading(null)
                   }
@@ -102,6 +108,11 @@ export function ResponseDraft({ reviewId, draft, platform, onApprove, onDismiss,
           <p className="text-sm text-text-muted mb-3">
             Your reply will be saved and posted publicly to your review platform.
           </p>
+          {hasExternalReply && (
+            <p className="mb-3 rounded-lg border border-amber-dark/30 bg-amber-light px-3 py-2 text-sm text-amber-dark">
+              This review already has a reply on Google. Posting will replace the existing reply.
+            </p>
+          )}
           <div className="rounded-lg bg-cream border border-border p-3 text-sm text-charcoal leading-relaxed">
             {text}
           </div>
