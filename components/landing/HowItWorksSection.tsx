@@ -36,17 +36,21 @@ const STEPS = [
   {
     num: '01',
     title: 'Connect your platforms',
-    body: 'Link Google, Yelp, TripAdvisor and more in minutes. All your reviews flow into one unified dashboard.',
+    body: 'Link Google in minutes — Yelp, TripAdvisor and more are coming soon. All your reviews flow into one unified dashboard.',
     mockup: (
       <div className="space-y-2">
         <p className="text-xs text-text-lighter mb-3 uppercase tracking-wide">Connecting platforms</p>
-        {['Google', 'Yelp', 'TripAdvisor'].map((p) => (
+        <div className="flex items-center justify-between rounded-lg border border-green/30 bg-green-light/40 px-4 py-2.5">
+          <span className="text-sm font-medium text-brown">Google</span>
+          <span className="text-xs text-green-dark font-medium"><span aria-hidden>✓</span> Connected</span>
+        </div>
+        {['Yelp', 'TripAdvisor'].map((p) => (
           <div
             key={p}
-            className="flex items-center justify-between rounded-lg border border-green/30 bg-green-light/40 px-4 py-2.5"
+            className="flex items-center justify-between rounded-lg border border-border bg-white px-4 py-2.5"
           >
-            <span className="text-sm font-medium text-brown">{p}</span>
-            <span className="text-xs text-green-dark font-medium"><span aria-hidden>✓</span> Connected</span>
+            <span className="text-sm font-medium text-text-lighter">{p}</span>
+            <span className="rounded-full bg-border px-2 py-0.5 text-[10px] font-medium text-text-lighter">Soon</span>
           </div>
         ))}
       </div>

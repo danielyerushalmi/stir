@@ -12,9 +12,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="flex-1 bg-cream overflow-y-auto pb-16 md:pb-0">
-        <ErrorBoundary>
-          <PageTransition>{children}</PageTransition>
-        </ErrorBoundary>
+        {/* Centered content column so pages don't stretch edge-to-edge on wide monitors. */}
+        <div className="mx-auto w-full max-w-7xl">
+          <ErrorBoundary>
+            <PageTransition>{children}</PageTransition>
+          </ErrorBoundary>
+        </div>
       </main>
       <MobileNav />
     </div>

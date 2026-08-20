@@ -73,6 +73,9 @@ model Review {
   reviewText   String          @db.Text
   authorName   String
   isDelivery   Boolean         @default(false)
+  // True when the platform already has a public reply (e.g. written directly
+  // on Google) — used to warn before overwriting via postGoogleReply (PUT).
+  hasExternalReply Boolean     @default(false)
   reviewDate   DateTime
   createdAt    DateTime        @default(now())
   response     ReviewResponse?

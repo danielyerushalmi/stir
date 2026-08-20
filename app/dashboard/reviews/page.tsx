@@ -13,7 +13,16 @@ interface Review {
   authorName: string
   reviewDate: string
   isDelivery: boolean
+  hasExternalReply?: boolean
   response?: { id: string; draftText: string; status: string } | null
+}
+
+interface QueueStats {
+  total: number
+  unanswered: number
+  urgent: number
+  responded: number
+  lastSyncedAt: string | null
 }
 
 export default function ReviewsPage() {
@@ -22,6 +31,7 @@ export default function ReviewsPage() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<QueueStats | null>(null)
   const [filter, setFilter] = useState({ platform: '', rating: '' })
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [draftingIds, setDraftingIds] = useState<Set<string>>(new Set())
@@ -38,6 +48,7 @@ export default function ReviewsPage() {
       const data = await res.json()
       setReviews(data.reviews ?? [])
       setTotalPages(data.pages ?? 1)
+      if (data.stats) setStats(data.stats)
       setLoading(false)
     } catch (err) {
       if ((err as Error)?.name === 'AbortError') return
@@ -86,25 +97,31 @@ export default function ReviewsPage() {
     }
   }
 
-  async function approveDraft(reviewId: string, finalText: string) {
+  async function approveDraft(reviewId: string, finalText: string): Promise<'posted' | 'saved' | 'error'> {
     try {
       const res = await fetch('/api/reviews/respond', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reviewId, finalText, action: 'approve', postToGoogle: true }),
       })
-      if (!res.ok) { setToast({ message: 'Failed to post response. Please try again.', type: 'error' }); return }
       const data = await res.json().catch(() => ({}))
-      if (data.warning) {
-        // DB saved but Google posting failed — surface warning and reflect a saved-not-posted state.
-        setToast({ message: data.warning, type: 'error' })
-        setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, response: { id: '', draftText: finalText, status: 'DRAFT' } } : r))
-      } else {
-        setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, response: { id: '', draftText: finalText, status: 'POSTED' } } : r))
+      if (!res.ok) {
+        setToast({ message: data.message ?? 'Failed to post response. Please try again.', type: 'error' })
+        return 'error'
       }
+      const posted = data.posted === true
+      if (data.warning) {
+        // Saved, but not posted (plan gate or Google hiccup) — tell the user why.
+        setToast({ message: data.warning, type: 'error' })
+      }
+      setReviews(prev => prev.map(r => r.id === reviewId
+        ? { ...r, response: { id: data.responseId ?? '', draftText: finalText, status: posted ? 'POSTED' : 'APPROVED' } }
+        : r))
       setActiveDrafts(prev => { const n = { ...prev }; delete n[reviewId]; return n })
+      return posted ? 'posted' : 'saved'
     } catch {
       setToast({ message: 'Failed to post response. Please try again.', type: 'error' })
+      return 'error'
     }
   }
 
@@ -147,9 +164,12 @@ export default function ReviewsPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-charcoal tracking-tight">Reviews</h1>
-        <Button size="sm" variant="secondary" onClick={syncReviews} disabled={syncing}>{syncing ? 'Syncing…' : 'Sync reviews'}</Button>
+        {/* On desktop the sync button lives in the queue rail. */}
+        <Button size="sm" variant="secondary" className="lg:hidden" onClick={syncReviews} disabled={syncing}>{syncing ? 'Syncing…' : 'Sync reviews'}</Button>
       </div>
 
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-8 lg:items-start">
+      <div className="max-w-3xl">
       <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
         <span className="text-xs font-medium text-text-muted">Quick:</span>
         <button
@@ -230,6 +250,7 @@ export default function ReviewsPage() {
                     reviewId={review.id}
                     draft={activeDrafts[review.id]}
                     platform={review.platform}
+                    hasExternalReply={review.hasExternalReply}
                     onApprove={approveDraft}
                     onDismiss={dismissDraft}
                     onRegenerate={() => requestDraft(review.id)}
@@ -248,6 +269,50 @@ export default function ReviewsPage() {
           <Button variant="secondary" size="sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Next →</Button>
         </div>
       )}
+      </div>
+
+      <aside className="hidden lg:block sticky top-8">
+        <div className="rounded-xl border border-border bg-white p-5">
+          <h2 className="text-sm font-semibold text-charcoal mb-4">Your queue</h2>
+          {stats ? (
+            <dl className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <dt className="text-sm text-text-muted">
+                  <button
+                    onClick={() => { setPage(1); setFilter({ platform: '', rating: '1' }) }}
+                    className="rounded-sm text-red-dark font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange"
+                  >
+                    Urgent (1–2★)
+                  </button>
+                </dt>
+                <dd className="text-sm font-semibold text-red-dark">{stats.urgent}</dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-sm text-text-muted">Awaiting reply</dt>
+                <dd className="text-sm font-semibold text-charcoal">{stats.unanswered}</dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-sm text-text-muted">Response rate</dt>
+                <dd className="text-sm font-semibold text-charcoal">
+                  {stats.total > 0 ? `${Math.round((stats.responded / stats.total) * 100)}%` : '—'}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between border-t border-border pt-3">
+                <dt className="text-xs text-text-lighter">Last synced</dt>
+                <dd className="text-xs text-text-lighter">
+                  {stats.lastSyncedAt ? new Date(stats.lastSyncedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Never'}
+                </dd>
+              </div>
+            </dl>
+          ) : (
+            <p className="text-sm text-text-lighter">Loading…</p>
+          )}
+          <Button size="sm" variant="secondary" className="w-full mt-4" onClick={syncReviews} disabled={syncing}>
+            {syncing ? 'Syncing…' : 'Sync reviews'}
+          </Button>
+        </div>
+      </aside>
+      </div>
     </main>
   )
 }

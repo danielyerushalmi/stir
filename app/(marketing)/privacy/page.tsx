@@ -9,7 +9,7 @@ export default function PrivacyPage() {
         </p>
         <h2 className="text-xl font-semibold text-brown mb-3">Information We Collect</h2>
         <p className="text-text-muted leading-relaxed mb-6">
-          We collect information you provide directly, including your name, email address, and restaurant information. We also collect data from platforms you connect (Google, Yelp, TripAdvisor) solely to provide the service.
+          We collect information you provide directly, including your name, email address, and restaurant information. We also collect data from platforms you connect (currently Google; additional platforms as they become available) solely to provide the service.
         </p>
         <h2 className="text-xl font-semibold text-brown mb-3">How We Use Your Information</h2>
         <p className="text-text-muted leading-relaxed mb-6">

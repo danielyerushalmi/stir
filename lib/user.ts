@@ -33,7 +33,8 @@ export async function requireRestaurant(): Promise<RequireRestaurantResult> {
   const user = await getOrCreateDbUser()
   if (!user) return { ok: false, response: NextResponse.json({ error: 'User not found' }, { status: 404 }) }
 
-  const restaurant = await db.restaurant.findFirst({ where: { userId: user.id } })
+  // Deterministic pick if a user ever has multiple restaurants (schema allows it).
+  const restaurant = await db.restaurant.findFirst({ where: { userId: user.id }, orderBy: { createdAt: 'asc' } })
   if (!restaurant) return { ok: false, response: NextResponse.json({ error: 'Restaurant not found' }, { status: 404 }) }
 
   return { ok: true, user, restaurant }

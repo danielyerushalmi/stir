@@ -19,6 +19,7 @@ export default function VoicePage() {
   const [step, setStep] = useState(0)
   const [responses, setResponses] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   const scenario = SCENARIOS[step]
   const completed = Object.keys(responses).length
@@ -27,8 +28,20 @@ export default function VoicePage() {
     const text = responses[scenario.type]?.trim()
     if (text) {
       setSaving(true)
-      await fetch('/api/onboarding/voice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reviewType: scenario.type, sampleReview: scenario.review, ownerResponse: text }) })
-      setSaving(false)
+      setSaveError('')
+      try {
+        const res = await fetch('/api/onboarding/voice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reviewType: scenario.type, sampleReview: scenario.review, ownerResponse: text }) })
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          setSaveError(data.error ?? 'Could not save your response. Please try again.')
+          return // don't advance — the user's text stays in the box
+        }
+      } catch {
+        setSaveError('Could not save your response. Check your connection and try again.')
+        return
+      } finally {
+        setSaving(false)
+      }
     }
     if (step < SCENARIOS.length - 1) setStep(s => s + 1)
     else router.push('/onboarding/plan')
@@ -59,6 +72,7 @@ export default function VoicePage() {
         {step === SCENARIOS.length - 1 && completed === SCENARIOS.length && (
           <p className="mb-4 text-sm text-green font-medium">Your voice is set — Stir will write like you from now on.</p>
         )}
+        {saveError && <p role="alert" className="mb-4 text-sm text-red-dark">{saveError}</p>}
         <div className="flex gap-3">
           <Button size="lg" className="flex-1" onClick={saveAndNext} disabled={saving}>{step < SCENARIOS.length - 1 ? 'Save & next →' : 'Finish →'}</Button>
           <Button variant="ghost" size="lg" onClick={skipScenario}>Skip</Button>

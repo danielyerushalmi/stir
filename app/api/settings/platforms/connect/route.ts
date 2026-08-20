@@ -1,9 +1,14 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
 import { checkRateLimit } from '@/lib/redis'
 
+/**
+ * Historically this endpoint marked platforms isConnected with a mock
+ * externalId — a fake connection that could never sync a review. No UI calls
+ * it anymore; it now always rejects. Delete it once a real integration ships
+ * with its own verified connect flow (like Google's OAuth callback).
+ */
 export async function POST(req: Request) {
   const ctx = await requireRestaurant()
   if (!ctx.ok) return ctx.response
@@ -19,19 +24,9 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
-  const MOCK_PLATFORMS = ['TRIPADVISOR', 'FACEBOOK', 'DOORDASH', 'UBEREATS', 'GRUBHUB']
-  if (!platform || typeof platform !== 'string' || !MOCK_PLATFORMS.includes(platform)) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
 
-  await db.platform.upsert({
-    where: { restaurantId_name: { restaurantId: restaurant.id, name: platform } },
-    update: { isConnected: true },
-    create: {
-      restaurantId: restaurant.id,
-      name: platform,
-      isConnected: true,
-      externalId: `mock_${platform.toLowerCase()}`,
-    },
-  })
-
-  return NextResponse.json({ ok: true })
+  return NextResponse.json(
+    { error: `${typeof platform === 'string' ? platform : 'This platform'} is not yet available.` },
+    { status: 400 },
+  )
 }

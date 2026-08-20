@@ -202,7 +202,7 @@ export function DemoWidget() {
       <div className="mx-auto max-w-4xl">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-semibold text-brown mb-4">Try it yourself</h2>
-          <p className="text-text-muted">Click through a real demo — no sign-up needed.</p>
+          <p className="text-text-muted">Click through an interactive demo with sample data — no sign-up needed.</p>
         </div>
 
         <div className="rounded-2xl border border-border bg-white shadow-xl overflow-hidden">

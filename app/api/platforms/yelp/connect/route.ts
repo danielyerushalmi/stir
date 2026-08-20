@@ -14,7 +14,9 @@ export async function POST(req: Request) {
   if (!ctx.ok) return ctx.response
   const { restaurant } = ctx
 
-  const allowed = await checkRateLimit(`yelp:connect:${restaurant.id}`, 5, 60)
+  // Fail-closed: this route spends paid Yelp API quota, so a Redis outage
+  // must not remove the limit (matches drafts/insights/reviews-fetch).
+  const allowed = await checkRateLimit(`yelp:connect:${restaurant.id}`, 5, 60, { failOpen: false })
   if (!allowed) return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 })
 
   let rawBody: Record<string, unknown>

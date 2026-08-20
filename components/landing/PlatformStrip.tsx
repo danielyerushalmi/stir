@@ -1,8 +1,10 @@
 'use client'
 
+// Only Google is a live integration today — everything else must show "Soon"
+// so the landing page never claims more than Settings can deliver.
 const PLATFORMS: { name: string; live: boolean }[] = [
   { name: 'Google',      live: true },
-  { name: 'Yelp',        live: true },
+  { name: 'Yelp',        live: false },
   { name: 'TripAdvisor', live: false },
   { name: 'DoorDash',    live: false },
   { name: 'Uber Eats',   live: false },
@@ -32,10 +34,16 @@ export function PlatformStrip() {
     <span key={`da-${i}`} aria-hidden>{DOT}</span>,
   ])
 
-  // Duplicate for seamless loop
-  const band = [...items, ...items.map((el) =>
-    el.key ? { ...el, key: el.key.replace('a-', 'b-').replace('da-', 'db-') } : el
-  )]
+  // Duplicate for seamless loop — the copy is aria-hidden so screen readers
+  // hear each platform once, not twice.
+  const band = [
+    ...items,
+    <span key="dup" aria-hidden="true" className="contents">
+      {items.map((el) =>
+        el.key ? { ...el, key: String(el.key).replace('a-', 'b-').replace('da-', 'db-') } : el
+      )}
+    </span>,
+  ]
 
   return (
     <section className="border-y border-border bg-white py-10 overflow-hidden" aria-label="Supported platforms">

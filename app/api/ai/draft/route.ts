@@ -26,6 +26,13 @@ export async function POST(req: Request) {
   const review = await db.review.findFirst({ where: { id: reviewId, restaurantId: restaurant.id } })
   if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
 
+  // Check deterministic preconditions BEFORE consuming quota — a FREE plan has
+  // only 3 drafts/month and a guaranteed-to-fail request must not burn one.
+  const voiceSampleCount = await db.voiceSample.count({ where: { restaurantId: restaurant.id } })
+  if (voiceSampleCount === 0) {
+    return NextResponse.json({ error: 'NO_VOICE_SAMPLES', message: 'Complete voice setup before generating drafts.' }, { status: 422 })
+  }
+
   const plan = restaurantWithSub.subscription?.plan ?? 'FREE'
   const limits = getPlanLimits(plan)
   const allowed = await checkRateLimit(`drafts:${restaurant.id}`, limits.draftsPerMonth, 30 * 24 * 3600, { failOpen: false })
@@ -39,7 +46,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const draft = await generateDraft(reviewId)
+    const draft = await generateDraft(reviewId, restaurant.id)
     await db.reviewResponse.upsert({
       where: { reviewId },
       update: { draftText: draft, status: 'DRAFT' },

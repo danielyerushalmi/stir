@@ -18,8 +18,8 @@ export default function PlanPage() {
   const [selected, setSelected] = useState('FREE')
 
   function handleSelect(planId: string) {
+    // Paid checkout doesn't exist yet — those buttons render disabled below.
     if (planId === 'FREE') router.push('/dashboard')
-    else router.push(`/dashboard?upgrade=${planId}`)
   }
 
   return (
@@ -64,6 +64,8 @@ export default function PlanPage() {
               variant={plan.highlight ? 'primary' : 'secondary'}
               size="sm"
               className="w-full"
+              disabled={plan.id !== 'FREE'}
+              aria-disabled={plan.id !== 'FREE'}
               onClick={e => { e.stopPropagation(); handleSelect(plan.id) }}
             >
               {plan.id === 'FREE' ? 'Start free' : 'Coming soon'}

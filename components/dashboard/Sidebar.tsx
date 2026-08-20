@@ -20,10 +20,14 @@ const NAV = [
 export function Sidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
+  // Width transitions stay off until after the localStorage read so returning
+  // users with a collapsed sidebar don't watch it animate shut on every load.
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem('sidebar-collapsed')
     if (saved !== null) setCollapsed(saved === 'true')
+    setMounted(true)
   }, [])
 
   function toggleCollapsed() {
@@ -35,7 +39,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className={cn('hidden md:flex flex-col bg-brown text-white transition-all duration-200 min-h-screen', collapsed ? 'w-16' : 'w-56')}>
+    <aside className={cn('hidden md:flex flex-col bg-brown text-white min-h-screen', mounted && 'transition-all duration-200', collapsed ? 'w-16' : 'w-56')}>
       <div className="flex items-center justify-between px-4 py-5">
         {!collapsed && <StirLogo variant="white" size="sm" />}
         <button onClick={toggleCollapsed} className="ml-auto rounded p-1 hover:bg-brown-mid/50 text-white/60 hover:text-white transition-colors" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>

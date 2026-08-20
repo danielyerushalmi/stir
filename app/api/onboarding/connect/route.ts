@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
 import { requireRestaurant } from '@/lib/user'
 import { VALID_PLATFORMS } from '@/types'
 import { checkRateLimit } from '@/lib/redis'
@@ -23,21 +22,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
   if (!platform || typeof platform !== 'string' || !VALID_PLATFORMS.includes(platform as typeof VALID_PLATFORMS[number])) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 })
-  if (externalId !== undefined && externalId !== null) {
-    if (platform === 'GOOGLE') {
-      return NextResponse.json({ error: 'Google externalId must come from the OAuth callback, not user input' }, { status: 400 })
-    }
-    if (!/^[a-zA-Z0-9_\-]{1,128}$/.test(String(externalId))) {
-      return NextResponse.json({ error: 'Invalid externalId format' }, { status: 400 })
-    }
+
+  // No platform may be "connected" by pasting a URL/ID: Google connects via the
+  // verified OAuth callback, and every other platform has no live integration
+  // yet. This route used to mark platforms isConnected with a mock externalId,
+  // which faked connections that could never sync a review.
+  if (platform === 'GOOGLE') {
+    return NextResponse.json({ error: 'Google must be connected via the OAuth flow' }, { status: 400 })
   }
-
-  const safeExternalId = (typeof externalId === 'string' && externalId) ? externalId : `mock_${platform.toLowerCase()}`
-  await db.platform.upsert({
-    where: { restaurantId_name: { restaurantId: restaurant.id, name: platform } },
-    update: { isConnected: true, externalId: safeExternalId },
-    create: { restaurantId: restaurant.id, name: platform, isConnected: true, externalId: safeExternalId },
-  })
-
-  return NextResponse.json({ ok: true })
+  void externalId
+  return NextResponse.json(
+    { error: `${platform} is not yet available. It will appear in Settings when it launches.` },
+    { status: 400 },
+  )
 }

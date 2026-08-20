@@ -6,6 +6,12 @@ import { getOrCreateDbUser } from '@/lib/user'
 import { getScoreResult } from '@/lib/scoring'
 import { ScoreCard } from '@/components/dashboard/ScoreCard'
 import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner'
+import { Greeting } from '@/components/dashboard/Greeting'
+import { TrendSection } from '@/components/dashboard/TrendSection'
+
+function sixtyDaysAgo(): Date {
+  return new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -22,7 +28,8 @@ export default async function DashboardPage({
   const restaurant = await db.restaurant.findFirst({ where: { userId: user.id } })
   if (!restaurant) redirect('/onboarding')
 
-  const [voiceSamples, scores, awaitingReply, recentReviews, insights, totalReviews, respondedReviews] = await Promise.all([
+  const trendSince = sixtyDaysAgo()
+  const [voiceSamples, scores, awaitingReply, recentReviews, insights, totalReviews, respondedReviews, trendReviews] = await Promise.all([
     db.voiceSample.findMany({ where: { restaurantId: restaurant.id } }),
     getScoreResult(restaurant.id),
     db.review.count({ where: { restaurantId: restaurant.id, response: null } }),
@@ -30,6 +37,10 @@ export default async function DashboardPage({
     db.insight.findMany({ where: { restaurantId: restaurant.id, isRead: false }, take: 3 }),
     db.review.count({ where: { restaurantId: restaurant.id } }),
     db.review.count({ where: { restaurantId: restaurant.id, response: { isNot: null } } }),
+    db.review.findMany({
+      where: { restaurantId: restaurant.id, reviewDate: { gte: trendSince } },
+      select: { rating: true, reviewDate: true, platform: true },
+    }),
   ])
 
   const voiceComplete = voiceSamples.length >= 3
@@ -40,18 +51,10 @@ export default async function DashboardPage({
     TIP: { bg: 'bg-green-light/40', border: 'border-l-green', label: 'Tip', text: 'text-green-dark' },
     DELIVERY_GAP: { bg: 'bg-amber-light/30', border: 'border-l-amber-dark', label: 'Delivery', text: 'text-amber-dark' },
   } as const
-  const now = new Date()
-  const hour = now.getHours()
-  const timeGreeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
-  const dayLabel = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
-
   return (
     <main id="main-content" tabIndex={-1} className="p-4 md:p-8 focus:outline-none">
       <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-charcoal tracking-tight">{timeGreeting}, {restaurant.name}</h1>
-          <p className="text-sm text-text-muted mt-1">{dayLabel}</p>
-        </div>
+        <Greeting name={restaurant.name} />
         {awaitingReply > 0 && (
           <div className="relative inline-flex">
             <span className="absolute inset-0 rounded-full bg-orange/20 animate-ping" aria-hidden="true" />
@@ -131,6 +134,8 @@ export default async function DashboardPage({
           }
         </div>
       </div>
+
+      <TrendSection reviews={trendReviews} />
     </main>
   )
 }
